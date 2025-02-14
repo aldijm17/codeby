@@ -18,6 +18,7 @@ export default function Home() {
   const [judul, setJudul] = useState('');
   const [isi, setIsi] = useState('');
   const [contekans, setContekans] = useState<Contekan[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Load data dari Supabase saat pertama kali render
   useEffect(() => {
@@ -59,6 +60,11 @@ export default function Home() {
     else setContekans(contekans.filter(contekan => contekan.id !== id));
   };
 
+  // Filter articles based on search query
+  const filteredContekans = contekans.filter(contekan =>
+    contekan.judul.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <div className="min-h-screen bg-gray-100 py-10">
       <div className="max-w-3xl mx-auto">
@@ -94,9 +100,37 @@ export default function Home() {
             Upload Artikel
           </button>
         </div>
+
+        {/* Search Input */}
+        <div className="mb-6">
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Cari artikel berdasarkan judul..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full px-4 py-3 pl-10 pr-4 text-gray-700 bg-white border border-gray-300 rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <svg
+              className="absolute left-3 top-3.5 h-5 w-5 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
+            </svg>
+          </div>
+        </div>
+
         <h2 className="text-2xl font-semibold mb-3">Daftar Artikel:</h2>
         <ul className="space-y-4">
-          {contekans.map((contekan) => (
+          {filteredContekans.map((contekan) => (
             <li key={contekan.id} className="bg-white shadow-lg rounded-lg p-5 transition-transform transform hover:scale-105">
               <h3 className="text-xl font-bold mb-2 text-gray-800">{contekan.judul}</h3>
               <pre className="bg-gray-100 p-3 rounded-lg overflow-x-auto">{contekan.isi}</pre>
