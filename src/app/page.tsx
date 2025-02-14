@@ -66,16 +66,16 @@ export default function Home() {
   );
 
   return (
-    <div className="min-h-screen bg-gray-100 py-10">
+    <div className="min-h-screen bg-gradient-to-r from-blue-50 to-blue-100 py-10">
       <div className="max-w-3xl mx-auto">
-        <h1 className="text-4xl font-extrabold text-center mb-6 text-blue-600">Artikel</h1>
-        <div className="bg-white shadow-lg rounded-lg p-8 mb-6">
+        <h1 className="text-5xl font-extrabold text-center mb-8 text-blue-900">Artikel</h1>
+        <div className="bg-white shadow-2xl rounded-lg p-8 mb-6 border border-gray-300 transition-transform transform hover:scale-105">
           <div className="mb-5">
             <label className="block text-gray-800 text-lg font-semibold mb-2">
               Judul Artikel
             </label>
             <input 
-              className="shadow-md appearance-none border border-gray-300 rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500" 
+              className="shadow-md appearance-none border border-gray-300 rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-600 transition duration-200 ease-in-out" 
               type="text" 
               placeholder="Judul..."
               value={judul}
@@ -87,7 +87,7 @@ export default function Home() {
               Isi Artikel
             </label>
             <textarea 
-              className="shadow-md appearance-none border border-gray-300 rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500" 
+              className="shadow-md appearance-none border border-gray-300 rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-600 transition duration-200 ease-in-out" 
               rows={4} 
               placeholder="Masukkan kodingan..."
               value={isi}
@@ -96,7 +96,7 @@ export default function Home() {
           </div>
           <button 
             onClick={tambahContekan}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            className="bg-blue-800 hover:bg-blue-900 text-white font-bold py-3 px-6 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200 ease-in-out">
             Upload Artikel
           </button>
         </div>
@@ -128,15 +128,15 @@ export default function Home() {
           </div>
         </div>
 
-        <h2 className="text-2xl font-semibold mb-3">Daftar Artikel:</h2>
+        <h2 className="text-3xl font-semibold mb-4 text-gray-800">Daftar Artikel:</h2>
         <ul className="space-y-4">
           {filteredContekans.map((contekan) => (
-            <li key={contekan.id} className="bg-white shadow-lg rounded-lg p-5 transition-transform transform hover:scale-105">
+            <li key={contekan.id} className="bg-white shadow-lg rounded-lg p-5 border border-gray-300 transition duration-200 ease-in-out hover:shadow-2xl hover:bg-gray-50">
               <h3 className="text-xl font-bold mb-2 text-gray-800">{contekan.judul}</h3>
               <pre className="bg-gray-100 p-3 rounded-lg overflow-x-auto">{contekan.isi}</pre>
               <button 
                 onClick={() => hapusContekan(contekan.id)}
-                className="mt-3 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500">
+                className="mt-3 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 transition duration-200 ease-in-out">
                 Hapus
               </button>
             </li>
