@@ -36,22 +36,22 @@ export default function Home() {
     fetchContekans();
   }, []);
 
-  const tambahContekan = useCallback(async (e) => {
-    e.preventDefault();
-    if (judul && isi) {
-      const { data, error } = await supabase
-        .from('contekans')
-        .insert([{ judul, isi }])
-        .select();
+  const tambahContekan = useCallback(async (e: React.FormEvent) => {
+  e.preventDefault();
+  if (judul && isi) {
+    const { data, error } = await supabase
+      .from('contekans')
+      .insert([{ judul, isi }])
+      .select();
 
-      if (error) console.log("Error adding contekan:", error);
-      else setContekans([data[0], ...contekans]);
+    if (error) console.log("Error adding contekan:", error);
+    else setContekans([...(data ?? []), ...contekans]);
 
-      setJudul('');
-      setIsi('');
-      setShowForm(false);
-    }
-  }, [judul, isi, contekans]);
+    setJudul('');
+    setIsi('');
+    setShowForm(false);
+  }
+}, [judul, isi, contekans]);
 
   const hapusContekan = async (id: string) => {
     const { error } = await supabase
