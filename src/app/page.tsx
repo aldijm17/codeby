@@ -19,8 +19,8 @@ export default function Home() {
   const [isi, setIsi] = useState('');
   const [contekans, setContekans] = useState<Contekan[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isVisible, setIsVisible] = useState(false); // State untuk kontrol visibilitas form
 
-  // Load data dari Supabase saat pertama kali render
   useEffect(() => {
     const fetchContekans = async () => {
       const { data, error } = await supabase
@@ -47,6 +47,7 @@ export default function Home() {
 
       setJudul('');
       setIsi('');
+      setIsVisible(false); // Sembunyikan form setelah tambah data berhasil
     }
   };
 
@@ -60,7 +61,6 @@ export default function Home() {
     else setContekans(contekans.filter(contekan => contekan.id !== id));
   };
 
-  // Filter articles based on search query
   const filteredContekans = contekans.filter(contekan =>
     contekan.judul.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -69,37 +69,51 @@ export default function Home() {
     <div className="min-h-screen bg-gradient-to-r from-blue-50 to-blue-100 py-10">
       <div className="max-w-3xl mx-auto">
         <h1 className="text-5xl font-extrabold text-center mb-8 text-blue-900">Artikel</h1>
-        <div className="bg-white shadow-2xl rounded-lg p-8 mb-6 border border-gray-300 transition-transform transform hover:scale-105">
-          <div className="mb-5">
-            <label className="block text-gray-800 text-lg font-semibold mb-2">
-              Judul Artikel
-            </label>
-            <input 
-              className="shadow-md appearance-none border border-gray-300 rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-600 transition duration-200 ease-in-out" 
-              type="text" 
-              placeholder="Judul..."
-              value={judul}
-              onChange={(e) => setJudul(e.target.value)}
-            />
-          </div>
-          <div className="mb-5">
-            <label className="block text-gray-800 text-lg font-semibold mb-2">
-              Isi Artikel
-            </label>
-            <textarea 
-              className="shadow-md appearance-none border border-gray-300 rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-600 transition duration-200 ease-in-out" 
-              rows={4} 
-              placeholder="Masukkan kodingan..."
-              value={isi}
-              onChange={(e) => setIsi(e.target.value)}
-            ></textarea>
-          </div>
-          <button 
-            onClick={tambahContekan}
-            className="bg-blue-800 hover:bg-blue-900 text-white font-bold py-3 px-6 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200 ease-in-out">
-            Upload Artikel
+
+        {/* Tombol Tampilkan Form */}
+        <div className="flex justify-end mb-4">
+          <button
+            onClick={() => setIsVisible(!isVisible)}
+            className="bg-blue-700 hover:bg-blue-800 text-white font-bold py-2 px-4 rounded-lg transition duration-200 ease-in-out"
+          >
+            {isVisible ? "Tutup Form" : "Tambah Artikel"}
           </button>
         </div>
+
+        {/* Form Tambah Artikel, hanya tampil jika isVisible === true */}
+        {isVisible && (
+          <div className="bg-white shadow-2xl rounded-lg p-8 mb-6 border border-gray-300 transition-transform transform hover:scale-105">
+            <div className="mb-5">
+              <label className="block text-gray-800 text-lg font-semibold mb-2">
+                Judul Artikel
+              </label>
+              <input 
+                className="shadow-md appearance-none border border-gray-300 rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-600 transition duration-200 ease-in-out" 
+                type="text" 
+                placeholder="Judul..."
+                value={judul}
+                onChange={(e) => setJudul(e.target.value)}
+              />
+            </div>
+            <div className="mb-5">
+              <label className="block text-gray-800 text-lg font-semibold mb-2">
+                Isi Artikel
+              </label>
+              <textarea 
+                className="shadow-md appearance-none border border-gray-300 rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-600 transition duration-200 ease-in-out" 
+                rows={4} 
+                placeholder="Masukkan kodingan..."
+                value={isi}
+                onChange={(e) => setIsi(e.target.value)}
+              ></textarea>
+            </div>
+            <button 
+              onClick={tambahContekan}
+              className="bg-blue-800 hover:bg-blue-900 text-white font-bold py-3 px-6 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200 ease-in-out">
+              Upload Artikel
+            </button>
+          </div>
+        )}
 
         {/* Search Input */}
         <div className="mb-6">
