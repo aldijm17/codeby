@@ -1,4 +1,4 @@
-'use client';
+'use client'
 
 import { useState, useEffect, useCallback } from 'react';
 import { createClient } from '@supabase/supabase-js';
@@ -46,7 +46,6 @@ export default function Home() {
 
       if (error) console.log("Error adding contekan:", error);
       else setContekans([...(data ?? []), ...contekans]);
-
       setJudul('');
       setIsi('');
       setShowForm(false);
@@ -69,68 +68,64 @@ export default function Home() {
     setTimeout(() => setCopiedId(null), 2000);
   };
 
+  // Menggunakan regex untuk pencarian
   const filteredContekans = contekans.filter(contekan =>
-    contekan.judul.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    contekan.isi.toLowerCase().includes(searchQuery.toLowerCase())
+    new RegExp(searchQuery, 'i').test(contekan.judul) ||
+    new RegExp(searchQuery, 'i').test(contekan.isi)
   );
 
   return (
-    <div className="min-h-screen bg-gray-900 p-4">
-      <div className="max-w-7xl mx-auto space-y-6">
-        <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
-          <div className="relative flex-1 w-full">
-            <input
-              type="text"
-              placeholder="Cari contekan..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 rounded-md bg-gray-800 text-white border border-gray-700 focus:border-blue-500 focus:outline-none"
-            />
-          </div>
-          
-          <button
-            onClick={() => setShowForm(true)}
-            className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md transition duration-200 flex items-center justify-center"
-          >
-            Tambah Contekan
-          </button>
-        </div>
+    <div className="p-4">
+      <input
+        type="text"
+        placeholder="Cari contekan..."
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        className="w-full pl-10 pr-4 py-2 rounded-md bg-gray-800 text-white border border-gray-700 focus:border-blue-500 focus:outline-none"
+      />
 
-        <div className="grid grid-cols-1 lg:grid-cols-1 gap-4">
-          {filteredContekans.map((contekan) => (
-            <div 
-              key={contekan.id} 
-              className="bg-gray-800 rounded-lg border border-gray-700 p-4 relative group h-64 flex flex-col"
-            >
-              <div className="flex justify-between items-start mb-3">
-                <h3 className="text-xl font-semibold text-white">{contekan.judul}</h3>
-                <div className="flex space-x-2">
-                  <button
-                    onClick={() => handleCopy(contekan.isi, contekan.id)}
-                    className={`p-1 rounded-md transition-colors duration-200 ${
-                      copiedId === contekan.id 
-                        ? 'bg-green-600 hover:bg-green-700' 
-                        : 'bg-blue-600 hover:bg-blue-700'
-                    }`}
-                  >
-                    {copiedId === contekan.id ? 'Tersalin!' : 'Salin'}
-                  </button>
-                  <button
-                    onClick={() => hapusContekan(contekan.id)}
-                    className="text-gray-500 hover:text-red-500 transition-colors duration-200"
-                  >
-                    Hapus
-                  </button>
-                </div>
-              </div>
-              <div className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800">
-                <pre className="text-gray-800 bg-gray-800 p-4 rounded-lg whitespace-pre-wrap">
-                  {contekan.isi}
-                </pre>
+      <button
+        onClick={() => setShowForm(true)}
+        className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md transition duration-200 flex items-center justify-center mt-4"
+      >
+        Tambah Contekan
+      </button>
+
+      <div className="grid grid-cols-1 lg:grid-cols-1 gap-4 mt-4">
+        {filteredContekans.map((contekan) => (
+          <div
+            key={contekan.id}
+            className="bg-gray-800 rounded-lg border border-gray-700 p-4 relative group h-64 flex flex-col"
+          >
+            <div className="flex justify-between items-start mb-3">
+              <h3 className="text-xl font-semibold text-white">{contekan.judul}</h3>
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => handleCopy(contekan.isi, contekan.id)}
+                  className={`p-1 rounded-md transition-colors duration-200 ${
+                    copiedId === contekan.id
+                      ? 'bg-green-600 hover:bg-green-700'
+                      : 'bg-blue-600 hover:bg-blue-700'
+                  }`}
+                >
+                  {copiedId === contekan.id ? '✔' : '📋'}
+                </button>
+
+                <button
+                  onClick={() => hapusContekan(contekan.id)}
+                  className="text-gray-500 hover:text-red-500 transition-colors duration-200"
+                >
+                  ❌
+                </button>
               </div>
             </div>
-          ))}
-        </div>
+            <div className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800">
+              <pre className="text-gray-300 bg-gray-800 p-4 rounded-lg whitespace-pre-wrap">
+                {contekan.isi}
+              </pre>
+            </div>
+          </div>
+        ))}
       </div>
 
       {showForm && (
@@ -138,7 +133,7 @@ export default function Home() {
           <div className="bg-gray-800 p-6 rounded-lg w-full max-w-xl">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold text-white">Tambah Contekan Baru</h2>
-              <button 
+              <button
                 onClick={() => setShowForm(false)}
                 className="text-gray-400 hover:text-white"
               >
@@ -163,7 +158,7 @@ export default function Home() {
                   className="w-full h-32 p-2 rounded-md bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none"
                 />
               </div>
-              <button 
+              <button
                 type="submit"
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md transition duration-200"
               >
