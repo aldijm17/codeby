@@ -62,11 +62,11 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gray-100 py-10">
       <div className="max-w-3xl mx-auto">
-        <h1 className="text-4xl font-extrabold text-center mb-6 text-blue-600">Contekan Kodingan</h1>
+        <h1 className="text-4xl font-extrabold text-center mb-6 text-blue-600">Artikel</h1>
         <div className="bg-white shadow-lg rounded-lg p-8 mb-6">
           <div className="mb-5">
             <label className="block text-gray-800 text-lg font-semibold mb-2">
-              Judul Contekan
+              Judul Artikel
             </label>
             <input 
               className="shadow-md appearance-none border border-gray-300 rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500" 
@@ -78,7 +78,7 @@ export default function Home() {
           </div>
           <div className="mb-5">
             <label className="block text-gray-800 text-lg font-semibold mb-2">
-              Isi Contekan
+              Isi Artikel
             </label>
             <textarea 
               className="shadow-md appearance-none border border-gray-300 rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500" 
@@ -91,10 +91,10 @@ export default function Home() {
           <button 
             onClick={tambahContekan}
             className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-            Simpan Contekan
+            Upload Artikel
           </button>
         </div>
-        <h2 className="text-2xl font-semibold mb-3">Daftar Contekan:</h2>
+        <h2 className="text-2xl font-semibold mb-3">Daftar Artikel:</h2>
         <ul className="space-y-4">
           {contekans.map((contekan) => (
             <li key={contekan.id} className="bg-white shadow-lg rounded-lg p-5 transition-transform transform hover:scale-105">
