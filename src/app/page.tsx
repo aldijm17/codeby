@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import { useState, useEffect, useCallback } from 'react';
 import { createClient } from '@supabase/supabase-js';
@@ -20,7 +20,7 @@ export default function Home() {
   const [contekans, setContekans] = useState<Contekan[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [showForm, setShowForm] = useState(false);
-  const [copiedId, setCopiedId] = useState<string | null>(null); // State untuk tracking copy
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchContekans = async () => {
@@ -37,21 +37,21 @@ export default function Home() {
   }, []);
 
   const tambahContekan = useCallback(async (e: React.FormEvent) => {
-  e.preventDefault();
-  if (judul && isi) {
-    const { data, error } = await supabase
-      .from('contekans')
-      .insert([{ judul, isi }])
-      .select();
+    e.preventDefault();
+    if (judul && isi) {
+      const { data, error } = await supabase
+        .from('contekans')
+        .insert([{ judul, isi }])
+        .select();
 
-    if (error) console.log("Error adding contekan:", error);
-    else setContekans([...(data ?? []), ...contekans]);
+      if (error) console.log("Error adding contekan:", error);
+      else setContekans([...(data ?? []), ...contekans]);
 
-    setJudul('');
-    setIsi('');
-    setShowForm(false);
-  }
-}, [judul, isi, contekans]);
+      setJudul('');
+      setIsi('');
+      setShowForm(false);
+    }
+  }, [judul, isi, contekans]);
 
   const hapusContekan = async (id: string) => {
     const { error } = await supabase
@@ -66,7 +66,7 @@ export default function Home() {
   const handleCopy = (text: string, id: string) => {
     navigator.clipboard.writeText(text);
     setCopiedId(id);
-    setTimeout(() => setCopiedId(null), 2000); // Reset setelah 2 detik
+    setTimeout(() => setCopiedId(null), 2000);
   };
 
   const filteredContekans = contekans.filter(contekan =>
@@ -86,38 +86,12 @@ export default function Home() {
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-2 rounded-md bg-gray-800 text-white border border-gray-700 focus:border-blue-500 focus:outline-none"
             />
-            <svg
-              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <circle cx="11" cy="11" r="8" />
-              <line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
           </div>
           
           <button
             onClick={() => setShowForm(true)}
             className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md transition duration-200 flex items-center justify-center"
           >
-            <svg
-              className="w-5 h-5 mr-2"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <line x1="12" y1="5" x2="12" y2="19" />
-              <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
             Tambah Contekan
           </button>
         </div>
@@ -131,7 +105,6 @@ export default function Home() {
               <div className="flex justify-between items-start mb-3">
                 <h3 className="text-xl font-semibold text-white">{contekan.judul}</h3>
                 <div className="flex space-x-2">
-                  {/* Tombol Copy */}
                   <button
                     onClick={() => handleCopy(contekan.isi, contekan.id)}
                     className={`p-1 rounded-md transition-colors duration-200 ${
@@ -140,55 +113,13 @@ export default function Home() {
                         : 'bg-blue-600 hover:bg-blue-700'
                     }`}
                   >
-                    {copiedId === contekan.id ? (
-                      <svg
-                        className="w-5 h-5 text-white"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M5 13l4 4L19 7"
-                        />
-                      </svg>
-                    ) : (
-                      <svg
-                        className="w-5 h-5 text-white"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-                        />
-                      </svg>
-                    )}
+                    {copiedId === contekan.id ? 'Tersalin!' : 'Salin'}
                   </button>
-
-                  {/* Tombol Hapus */}
                   <button
                     onClick={() => hapusContekan(contekan.id)}
                     className="text-gray-500 hover:text-red-500 transition-colors duration-200"
                   >
-                    <svg
-                      className="w-5 h-5"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M18 6L6 18M6 6l12 12" />
-                    </svg>
+                    Hapus
                   </button>
                 </div>
               </div>
