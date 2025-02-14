@@ -1,6 +1,6 @@
-"use client";
+'use client'
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -19,7 +19,8 @@ export default function Home() {
   const [isi, setIsi] = useState('');
   const [contekans, setContekans] = useState<Contekan[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [isVisible, setIsVisible] = useState(false); // State untuk kontrol visibilitas form
+  const [showForm, setShowForm] = useState(false);
+  const [copiedId, setCopiedId] = useState<string | null>(null); // State untuk tracking copy
 
   useEffect(() => {
     const fetchContekans = async () => {
@@ -35,7 +36,8 @@ export default function Home() {
     fetchContekans();
   }, []);
 
-  const tambahContekan = async () => {
+  const tambahContekan = useCallback(async (e) => {
+    e.preventDefault();
     if (judul && isi) {
       const { data, error } = await supabase
         .from('contekans')
@@ -47,9 +49,9 @@ export default function Home() {
 
       setJudul('');
       setIsi('');
-      setIsVisible(false); // Sembunyikan form setelah tambah data berhasil
+      setShowForm(false);
     }
-  };
+  }, [judul, isi, contekans]);
 
   const hapusContekan = async (id: string) => {
     const { error } = await supabase
@@ -61,102 +63,185 @@ export default function Home() {
     else setContekans(contekans.filter(contekan => contekan.id !== id));
   };
 
+  const handleCopy = (text: string, id: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000); // Reset setelah 2 detik
+  };
+
   const filteredContekans = contekans.filter(contekan =>
-    contekan.judul.toLowerCase().includes(searchQuery.toLowerCase())
+    contekan.judul.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    contekan.isi.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-r from-blue-50 to-blue-100 py-10">
-      <div className="max-w-3xl mx-auto">
-        <h1 className="text-5xl font-extrabold text-center mb-8 text-blue-900">Artikel</h1>
-
-        {/* Tombol Tampilkan Form */}
-        <div className="flex justify-end mb-4">
+    <div className="min-h-screen bg-gray-900 p-4">
+      <div className="max-w-7xl mx-auto space-y-6">
+        <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
+          <div className="relative flex-1 w-full">
+            <input
+              type="text"
+              placeholder="Cari contekan..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 rounded-md bg-gray-800 text-white border border-gray-700 focus:border-blue-500 focus:outline-none"
+            />
+            <svg
+              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+          </div>
+          
           <button
-            onClick={() => setIsVisible(!isVisible)}
-            className="bg-blue-700 hover:bg-blue-800 text-white font-bold py-2 px-4 rounded-lg transition duration-200 ease-in-out"
+            onClick={() => setShowForm(true)}
+            className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md transition duration-200 flex items-center justify-center"
           >
-            {isVisible ? "Tutup Form" : "Tambah Artikel"}
+            <svg
+              className="w-5 h-5 mr-2"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            Tambah Contekan
           </button>
         </div>
 
-        {/* Form Tambah Artikel, hanya tampil jika isVisible === true */}
-        {isVisible && (
-          <div className="bg-white shadow-2xl rounded-lg p-8 mb-6 border border-gray-300 transition-transform transform hover:scale-105">
-            <div className="mb-5">
-              <label className="block text-gray-800 text-lg font-semibold mb-2">
-                Judul Artikel
-              </label>
-              <input 
-                className="shadow-md appearance-none border border-gray-300 rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-600 transition duration-200 ease-in-out" 
-                type="text" 
-                placeholder="Judul..."
-                value={judul}
-                onChange={(e) => setJudul(e.target.value)}
-              />
-            </div>
-            <div className="mb-5">
-              <label className="block text-gray-800 text-lg font-semibold mb-2">
-                Isi Artikel
-              </label>
-              <textarea 
-                className="shadow-md appearance-none border border-gray-300 rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-600 transition duration-200 ease-in-out" 
-                rows={4} 
-                placeholder="Masukkan kodingan..."
-                value={isi}
-                onChange={(e) => setIsi(e.target.value)}
-              ></textarea>
-            </div>
-            <button 
-              onClick={tambahContekan}
-              className="bg-blue-800 hover:bg-blue-900 text-white font-bold py-3 px-6 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200 ease-in-out">
-              Upload Artikel
-            </button>
-          </div>
-        )}
-
-        {/* Search Input */}
-        <div className="mb-6">
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="Cari artikel berdasarkan judul..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full px-4 py-3 pl-10 pr-4 text-gray-700 bg-white border border-gray-300 rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            <svg
-              className="absolute left-3 top-3.5 h-5 w-5 text-gray-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
+        <div className="grid grid-cols-1 lg:grid-cols-1 gap-4">
+          {filteredContekans.map((contekan) => (
+            <div 
+              key={contekan.id} 
+              className="bg-gray-800 rounded-lg border border-gray-700 p-4 relative group h-64 flex flex-col"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-              />
-            </svg>
+              <div className="flex justify-between items-start mb-3">
+                <h3 className="text-xl font-semibold text-white">{contekan.judul}</h3>
+                <div className="flex space-x-2">
+                  {/* Tombol Copy */}
+                  <button
+                    onClick={() => handleCopy(contekan.isi, contekan.id)}
+                    className={`p-1 rounded-md transition-colors duration-200 ${
+                      copiedId === contekan.id 
+                        ? 'bg-green-600 hover:bg-green-700' 
+                        : 'bg-blue-600 hover:bg-blue-700'
+                    }`}
+                  >
+                    {copiedId === contekan.id ? (
+                      <svg
+                        className="w-5 h-5 text-white"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M5 13l4 4L19 7"
+                        />
+                      </svg>
+                    ) : (
+                      <svg
+                        className="w-5 h-5 text-white"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                        />
+                      </svg>
+                    )}
+                  </button>
+
+                  {/* Tombol Hapus */}
+                  <button
+                    onClick={() => hapusContekan(contekan.id)}
+                    className="text-gray-500 hover:text-red-500 transition-colors duration-200"
+                  >
+                    <svg
+                      className="w-5 h-5"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M18 6L6 18M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              <div className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800">
+                <pre className="text-gray-800 bg-gray-800 p-4 rounded-lg whitespace-pre-wrap">
+                  {contekan.isi}
+                </pre>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {showForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-gray-800 p-6 rounded-lg w-full max-w-xl">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-white">Tambah Contekan Baru</h2>
+              <button 
+                onClick={() => setShowForm(false)}
+                className="text-gray-400 hover:text-white"
+              >
+                ✕
+              </button>
+            </div>
+            <form onSubmit={tambahContekan} className="space-y-4">
+              <div>
+                <input
+                  type="text"
+                  placeholder="Judul Contekan"
+                  value={judul}
+                  onChange={(e) => setJudul(e.target.value)}
+                  className="w-full p-2 rounded-md bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none"
+                />
+              </div>
+              <div>
+                <textarea
+                  placeholder="Isi Contekan"
+                  value={isi}
+                  onChange={(e) => setIsi(e.target.value)}
+                  className="w-full h-32 p-2 rounded-md bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none"
+                />
+              </div>
+              <button 
+                type="submit"
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md transition duration-200"
+              >
+                Tambah Contekan
+              </button>
+            </form>
           </div>
         </div>
-
-        <h2 className="text-3xl font-semibold mb-4 text-gray-800">Daftar Artikel:</h2>
-        <ul className="space-y-4">
-          {filteredContekans.map((contekan) => (
-            <li key={contekan.id} className="bg-white shadow-lg rounded-lg p-5 border border-gray-300 transition duration-200 ease-in-out hover:shadow-2xl hover:bg-gray-50">
-              <h3 className="text-xl font-bold mb-2 text-gray-800">{contekan.judul}</h3>
-              <pre className="bg-gray-100 p-3 rounded-lg overflow-x-auto">{contekan.isi}</pre>
-              <button 
-                onClick={() => hapusContekan(contekan.id)}
-                className="mt-3 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 transition duration-200 ease-in-out">
-                Hapus
-              </button>
-            </li>
-          ))}
-        </ul>
-      </div>
+      )}
     </div>
   );
 }
