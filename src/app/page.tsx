@@ -59,24 +59,22 @@ export default function Home() {
     }
   }, [deletingId, countdown]);
 
- const tambahContekan = useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
-  e.preventDefault();
-  if (judul && isi) {
-    const { data, error } = await supabase
-      .from('contekans')
-      .insert([{ judul, isi }]);
+  const tambahContekan = useCallback(async (e) => {
+    e.preventDefault();
+    if (judul && isi) {
+      const { data, error } = await supabase
+        .from('contekans')
+        .insert([{ judul, isi }])
+        .select();
 
-    if (error) {
-      console.error('Error menambah contekan:', error);
-    } else {
-      console.log('Contekan berhasil ditambah:', data);
+      if (error) console.log("Error adding contekan:", error);
+      else setContekans([data[0], ...contekans]);
+
       setJudul('');
       setIsi('');
       setShowForm(false);
-      fetchContekans(); // Refresh setelah menambah
     }
-  }
-}, [judul, isi]);
+  }, [judul, isi, contekans]);
 
   // Mulai proses penghapusan dengan countdown
   const mulaiHapusContekan = (id: string) => {
