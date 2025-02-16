@@ -59,7 +59,7 @@ export default function Home() {
     }
   }, [deletingId, countdown]);
 
-  const tambahContekan = useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
+  const tambahContekan = const tambahContekan = useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
   e.preventDefault();
   if (judul && isi) {
     const { data, error } = await supabase
@@ -70,6 +70,10 @@ export default function Home() {
       console.error('Error menambah contekan:', error);
     } else {
       console.log('Contekan berhasil ditambah:', data);
+      setJudul('');
+      setIsi('');
+      setShowForm(false);
+      fetchContekans(); // Refresh setelah menambah
     }
   }
 }, [judul, isi]);
