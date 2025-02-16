@@ -63,7 +63,7 @@ export default function Home() {
   e.preventDefault();
   if (judul && isi) {
     const { data, error } = await supabase
-      .from('nama_tabel')
+      .from('contekans')
       .insert([{ judul, isi }]);
 
     if (error) {
