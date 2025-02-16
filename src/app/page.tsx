@@ -63,7 +63,7 @@ export default function Home() {
   e.preventDefault();
   if (judul && isi) {
     const { data, error } = await supabase
-      .from('contekan')
+      .from('contekans')
       .insert([{ judul, isi }]);
     if (error) {
       console.error(error.message);
