@@ -59,7 +59,7 @@ export default function Home() {
     }
   }, [deletingId, countdown]);
 
-  const tambahContekan = const tambahContekan = useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
+ const tambahContekan = useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
   e.preventDefault();
   if (judul && isi) {
     const { data, error } = await supabase
