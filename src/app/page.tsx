@@ -2,6 +2,9 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { createClient } from '@supabase/supabase-js';
+import LoginPage from './login/page';
+import { useRouter } from 'next/navigation';
+
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -15,17 +18,14 @@ interface Contekan {
 }
 
 export default function Home() {
-  const [judul, setJudul] = useState('');
-  const [isi, setIsi] = useState('');
   const [contekans, setContekans] = useState<Contekan[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [showForm, setShowForm] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  
-  // State untuk fitur undo delete
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [countdown, setCountdown] = useState(5);
-  const [deletionTimer, setDeletionTimer] = useState<NodeJS.Timeout | null>(null);
+  const router = useRouter();
+
+  const LoginPage = () => {
+    router.push('/login');
+  };
 
   useEffect(() => {
     const fetchContekans = async () => {
@@ -40,75 +40,10 @@ export default function Home() {
 
     fetchContekans();
   }, []);
-
-  // Effect untuk menangani countdown penghapusan
-  useEffect(() => {
-    if (deletingId && countdown > 0) {
-      const timer = setTimeout(() => {
-        setCountdown(countdown - 1);
-      }, 1000);
-      
-      setDeletionTimer(timer);
-      
-      return () => {
-        if (timer) clearTimeout(timer);
-      };
-    } else if (deletingId && countdown === 0) {
-      // Jalankan penghapusan setelah countdown selesai
-      confirmDelete(deletingId);
-    }
-  }, [deletingId, countdown]);
-
-  const tambahContekan = useCallback(async (e) => {
-    e.preventDefault();
-    if (judul && isi) {
-      const { data, error } = await supabase
-        .from('contekans')
-        .insert([{ judul, isi }])
-        .select();
-
-      if (error) console.log("Error adding contekan:", error);
-      else setContekans([data[0], ...contekans]);
-
-      setJudul('');
-      setIsi('');
-      setShowForm(false);
-    }
-  }, [judul, isi, contekans]);
-
-  // Mulai proses penghapusan dengan countdown
-  const mulaiHapusContekan = (id: string) => {
-    setDeletingId(id);
-    setCountdown(5);
-  };
-  
-  // Batalkan penghapusan
-  const batalkanHapus = () => {
-    if (deletionTimer) {
-      clearTimeout(deletionTimer);
-    }
-    setDeletingId(null);
-    setCountdown(5);
-  };
-  
-  // Konfirmasi penghapusan final setelah countdown
-  const confirmDelete = async (id: string) => {
-    const { error } = await supabase
-      .from('contekans')
-      .delete()
-      .eq('id', id);
-
-    if (error) console.log("Error deleting contekan:", error);
-    else setContekans(contekans.filter(contekan => contekan.id !== id));
-    
-    setDeletingId(null);
-    setCountdown(5);
-  };
-
   const handleCopy = (text: string, id: string) => {
     navigator.clipboard.writeText(text);
     setCopiedId(id);
-    setTimeout(() => setCopiedId(null), 2000); // Reset setelah 2 detik
+    setTimeout(() => setCopiedId(null), 2000);
   };
 
   const filteredContekans = contekans.filter(contekan =>
@@ -145,22 +80,10 @@ export default function Home() {
           </div>
           
           <button
-            onClick={() => setShowForm(true)}
+            onClick={LoginPage}
             className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md transition duration-200 flex items-center justify-center"
           >
-            <svg
-              className="w-5 h-5 mr-2"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <line x1="12" y1="5" x2="12" y2="19" />
-              <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-            Tambah Contekan
+            Login
           </button>
         </div>
 
@@ -181,7 +104,6 @@ export default function Home() {
                         ? 'bg-green-600 hover:bg-green-700' 
                         : 'bg-blue-600 hover:bg-blue-700'
                     }`}
-                    disabled={deletingId !== null}
                   >
                     {copiedId === contekan.id ? (
                       <svg
@@ -215,50 +137,6 @@ export default function Home() {
                       </svg>
                     )}
                   </button>
-
-                  {/* Tombol Hapus dan Undo */}
-                  {deletingId === contekan.id ? (
-                    <div className="flex items-center space-x-2">
-                      <span className="text-red-500 text-sm">Hapus dalam {countdown}s</span>
-                      <button
-                        onClick={batalkanHapus}
-                        className="bg-gray-600 hover:bg-gray-700 text-white p-1 rounded-md"
-                      >
-                        <svg
-                          className="w-5 h-5"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M6 18L18 6M6 6l12 12"
-                          />
-                        </svg>
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => mulaiHapusContekan(contekan.id)}
-                      className="text-gray-500 hover:text-red-500 transition-colors duration-200"
-                      disabled={deletingId !== null}
-                    >
-                      <svg
-                        className="w-5 h-5"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M18 6L6 18M6 6l12 12" />
-                      </svg>
-                    </button>
-                  )}
                 </div>
               </div>
               <div className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800">
@@ -270,47 +148,6 @@ export default function Home() {
           ))}
         </div>
       </div>
-
-      {showForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-gray-800 p-6 rounded-lg w-full max-w-xl">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-white">Tambah Contekan Baru</h2>
-              <button 
-                onClick={() => setShowForm(false)}
-                className="text-gray-400 hover:text-white"
-              >
-                ✕
-              </button>
-            </div>
-            <form onSubmit={tambahContekan} className="space-y-4">
-              <div>
-                <input
-                  type="text"
-                  placeholder="Judul Contekan"
-                  value={judul}
-                  onChange={(e) => setJudul(e.target.value)}
-                  className="w-full p-2 rounded-md bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none"
-                />
-              </div>
-              <div>
-                <textarea
-                  placeholder="Isi Contekan"
-                  value={isi}
-                  onChange={(e) => setIsi(e.target.value)}
-                  className="w-full h-32 p-2 rounded-md bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none"
-                />
-              </div>
-              <button 
-                type="submit"
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md transition duration-200"
-              >
-                Tambah Contekan
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
