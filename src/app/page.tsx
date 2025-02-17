@@ -41,69 +41,6 @@ export default function Home() {
     fetchContekans();
   }, []);
 
-  // Effect untuk menangani countdown penghapusan
-  useEffect(() => {
-    if (deletingId && countdown > 0) {
-      const timer = setTimeout(() => {
-        setCountdown(countdown - 1);
-      }, 1000);
-      
-      setDeletionTimer(timer);
-      
-      return () => {
-        if (timer) clearTimeout(timer);
-      };
-    } else if (deletingId && countdown === 0) {
-      // Jalankan penghapusan setelah countdown selesai
-      confirmDelete(deletingId);
-    }
-  }, [deletingId, countdown]);
-
-  const tambahContekan = useCallback(async (e) => {
-    e.preventDefault();
-    if (judul && isi) {
-      const { data, error } = await supabase
-        .from('contekans')
-        .insert([{ judul, isi }])
-        .select();
-
-      if (error) console.log("Error adding contekan:", error);
-      else setContekans([data[0], ...contekans]);
-
-      setJudul('');
-      setIsi('');
-      setShowForm(false);
-    }
-  }, [judul, isi, contekans]);
-
-  // Mulai proses penghapusan dengan countdown
-  const mulaiHapusContekan = (id: string) => {
-    setDeletingId(id);
-    setCountdown(5);
-  };
-  
-  // Batalkan penghapusan
-  const batalkanHapus = () => {
-    if (deletionTimer) {
-      clearTimeout(deletionTimer);
-    }
-    setDeletingId(null);
-    setCountdown(5);
-  };
-  
-  // Konfirmasi penghapusan final setelah countdown
-  const confirmDelete = async (id: string) => {
-    const { error } = await supabase
-      .from('contekans')
-      .delete()
-      .eq('id', id);
-
-    if (error) console.log("Error deleting contekan:", error);
-    else setContekans(contekans.filter(contekan => contekan.id !== id));
-    
-    setDeletingId(null);
-    setCountdown(5);
-  };
 
   const handleCopy = (text: string, id: string) => {
     navigator.clipboard.writeText(text);
