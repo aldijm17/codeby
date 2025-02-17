@@ -29,11 +29,19 @@ export default function Dashboard() {
 
   const tambahContekan = async (e: React.FormEvent) => {
     e.preventDefault();
-    const { data, error } = await supabase.from('contekans').insert([{ judul, isi }]);
-    if (error) return console.error(error);
-    setContekans([...contekans, data[0]]);
-    setJudul('');
-    setIsi('');
+    const { data, error } = await supabase.from('contekans').insert([{ judul, isi }]).select();
+
+if (error) {
+  console.error(error);
+  return;
+}
+
+if (data && data.length > 0) {
+  setContekans([...contekans, data[0]]);
+} else {
+  console.error("Insert berhasil tetapi tidak ada data yang dikembalikan.");
+}
+
   };
 
   const logout = async () => {
