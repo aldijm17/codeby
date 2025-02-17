@@ -1,13 +1,18 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, FormEvent } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { useRouter } from 'next/navigation';
 
+// Environment variables validation
+if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+  throw new Error('Missing Supabase environment variables');
+}
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+);
 
 interface Contekan {
   id: string;
@@ -23,110 +28,123 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  
-  //check login 
-  const router = useRouter();
-
-  useEffect(() => {
-    // Cek status login
-    const isAuthenticated = localStorage.getItem('isAuthenticated');
-    if (!isAuthenticated) {
-      router.push('/login');
-    }
-  }, [router]);
-
-  const handleLogout = () => {
-    localStorage.removeItem('isAuthenticated');
-    router.push('/');
-  };
-  
-  // State untuk fitur undo delete
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [countdown, setCountdown] = useState(5);
+  const [countdown, setCountdown] = useState(3);
   const [deletionTimer, setDeletionTimer] = useState<NodeJS.Timeout | null>(null);
 
+  const router = useRouter();
+
+  // Authentication check
+  useEffect(() => {
+    const checkAuth = () => {
+      const isAuthenticated = localStorage.getItem('isAuthenticated');
+      if (!isAuthenticated) {
+        router.push('/login');
+      }
+    };
+    
+    checkAuth();
+  }, [router]);
+
+  // Fetch contekans on mount
   useEffect(() => {
     const fetchContekans = async () => {
-      const { data, error } = await supabase
-        .from('contekans')
-        .select('*')
-        .order('created_at', { ascending: false });
+      try {
+        const { data, error } = await supabase
+          .from('contekans')
+          .select('*')
+          .order('created_at', { ascending: false });
 
-      if (error) console.log("Error fetching contekans:", error);
-      else setContekans(data as Contekan[]);
+        if (error) throw error;
+        setContekans(data as Contekan[]);
+      } catch (error) {
+        console.error("Error fetching contekans:", error);
+      }
     };
 
     fetchContekans();
   }, []);
 
-  // Effect untuk menangani countdown penghapusan
+  // Deletion countdown effect
   useEffect(() => {
     if (deletingId && countdown > 0) {
       const timer = setTimeout(() => {
-        setCountdown(countdown - 1);
+        setCountdown(prev => prev - 1);
       }, 1000);
       
       setDeletionTimer(timer);
       
-      return () => {
-        if (timer) clearTimeout(timer);
-      };
+      return () => clearTimeout(timer);
     } else if (deletingId && countdown === 0) {
-      // Jalankan penghapusan setelah countdown selesai
       confirmDelete(deletingId);
     }
   }, [deletingId, countdown]);
 
-  const tambahContekan = useCallback(async (e) => {
+  const tambahContekan = useCallback(async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (judul && isi) {
+    if (!judul || !isi) return;
+
+    try {
       const { data, error } = await supabase
         .from('contekans')
         .insert([{ judul, isi }])
         .select();
 
-      if (error) console.log("Error adding contekan:", error);
-      else setContekans([data[0], ...contekans]);
-
+      if (error) throw error;
+      
+      setContekans(prev => [data[0], ...prev]);
       setJudul('');
       setIsi('');
       setShowForm(false);
+    } catch (error) {
+      console.error("Error adding contekan:", error);
     }
-  }, [judul, isi, contekans]);
+  }, [judul, isi]);
 
-  // Mulai proses penghapusan dengan countdown
+  const handleLogout = () => {
+    localStorage.removeItem('isAuthenticated');
+    router.push('/');
+  };
+
   const mulaiHapusContekan = (id: string) => {
     setDeletingId(id);
-    setCountdown(0.1);
+    setCountdown(3);
   };
-  
-  // Batalkan penghapusan
+
   const batalkanHapus = () => {
     if (deletionTimer) {
       clearTimeout(deletionTimer);
     }
     setDeletingId(null);
-    setCountdown(0.1);
+    setCountdown(3);
   };
-  
-  // Konfirmasi penghapusan final setelah countdown
+
   const confirmDelete = async (id: string) => {
-    const { error } = await supabase
-      .from('contekans')
-      .delete()
-      .eq('id', id);
+    try {
+      const { error } = await supabase
+        .from('contekans')
+        .delete()
+        .eq('id', id);
 
-    if (error) console.log("Error deleting contekan:", error);
-    else setContekans(contekans.filter(contekan => contekan.id !== id));
-    
-    setDeletingId(null);
-    setCountdown(5);
+      if (error) throw error;
+      
+      setContekans(prev => prev.filter(contekan => contekan.id !== id));
+    } catch (error) {
+      console.error("Error deleting contekan:", error);
+    } finally {
+      setDeletingId(null);
+      setCountdown(3);
+    }
   };
 
-  const handleCopy = (text: string, id: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedId(id);
-    setTimeout(() => setCopiedId(null), 2000); // Reset setelah 2 detik
+  const handleCopy = async (text: string, id: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedId(id);
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch (error) {
+      console.error("Error copying to clipboard:", error);
+    }
   };
 
   const filteredContekans = contekans.filter(contekan =>
@@ -165,6 +183,7 @@ export default function Home() {
           <button
             onClick={() => setShowForm(true)}
             className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md transition duration-200 flex items-center justify-center"
+            disabled={deletingId !== null}
           >
             <svg
               className="w-5 h-5 mr-2"
@@ -182,13 +201,13 @@ export default function Home() {
           </button>
           <button
             onClick={handleLogout}
-            className="w-full sm:w-auto bg-blue-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-md transition duration-200 flex items-center justify-center"
+            className="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-md transition duration-200 flex items-center justify-center"
           >
             Log Out
           </button>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-1 gap-4">
+        <div className="grid grid-cols-1 gap-4">
           {filteredContekans.map((contekan) => (
             <div 
               key={contekan.id} 
@@ -197,7 +216,6 @@ export default function Home() {
               <div className="flex justify-between items-start mb-3">
                 <h3 className="text-xl font-semibold text-white">{contekan.judul}</h3>
                 <div className="flex space-x-2">
-                  {/* Tombol Copy */}
                   <button
                     onClick={() => handleCopy(contekan.isi, contekan.id)}
                     className={`p-1 rounded-md transition-colors duration-200 ${
@@ -213,7 +231,6 @@ export default function Home() {
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
-                        xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
                           strokeLinecap="round"
@@ -228,7 +245,6 @@ export default function Home() {
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
-                        xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
                           strokeLinecap="round"
@@ -240,7 +256,6 @@ export default function Home() {
                     )}
                   </button>
 
-                  {/* Tombol Hapus dan Undo */}
                   {deletingId === contekan.id ? (
                     <div className="flex items-center space-x-2">
                       <span className="text-red-500 text-sm">Hapus dalam {countdown}s</span>
@@ -253,7 +268,6 @@ export default function Home() {
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
-                          xmlns="http://www.w3.org/2000/svg"
                         >
                           <path
                             strokeLinecap="round"
@@ -286,7 +300,7 @@ export default function Home() {
                 </div>
               </div>
               <div className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800">
-                <pre className="text-gray-800 bg-gray-800 p-4 rounded-lg whitespace-pre-wrap">
+                <pre className="text-gray-300 bg-gray-800 p-4 rounded-lg whitespace-pre-wrap">
                   {contekan.isi}
                 </pre>
               </div>
@@ -315,6 +329,7 @@ export default function Home() {
                   value={judul}
                   onChange={(e) => setJudul(e.target.value)}
                   className="w-full p-2 rounded-md bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none"
+                  required
                 />
               </div>
               <div>
@@ -323,6 +338,7 @@ export default function Home() {
                   value={isi}
                   onChange={(e) => setIsi(e.target.value)}
                   className="w-full h-32 p-2 rounded-md bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none"
+                  required
                 />
               </div>
               <button 
