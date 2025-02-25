@@ -19,10 +19,9 @@ interface Contekan {
   created_at: string;
 }
 
-declare module 'react-syntax-highlighter' {
-  import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-  export { SyntaxHighlighter };
-}
+// declare module 'react-syntax-highlighter' {
+//   export { SyntaxHighlighter };
+// }
 
 export default function Home() {
   const [contekans, setContekans] = useState<Contekan[]>([]);
