@@ -6,6 +6,7 @@ import LoginPage from './login/page';
 import { useRouter } from 'next/navigation';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { atomDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import './globals.css';
 
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -19,9 +20,6 @@ interface Contekan {
   created_at: string;
 }
 
-// declare module 'react-syntax-highlighter' {
-//   export { SyntaxHighlighter };
-// }
 
 export default function Home() {
   const [contekans, setContekans] = useState<Contekan[]>([]);
@@ -173,7 +171,7 @@ export default function Home() {
 
         {selectedContekan && (
           <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-            <div className="bg-white p-4 rounded-lg shadow-lg max-w-full w-full h-full overflow-hidden">
+            <div className="bg-gray-800 p-4 rounded-lg shadow-lg max-w-full w-full h-full overflow-hidden">
               <h2 className="text-xl font-semibold mb-2">{selectedContekan.judul}</h2>
               <div className="max-h-[80vh] overflow-y-auto">
                 <SyntaxHighlighter language="javascript" style={atomDark} className="p-4 rounded-lg">
