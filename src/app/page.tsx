@@ -18,6 +18,7 @@ interface Contekan {
   judul: string;
   isi: string;
   created_at: string;
+  deskripsi: string;
 }
 
 
@@ -37,7 +38,7 @@ export default function Home() {
       const { data, error } = await supabase
         .from('contekans')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: true });
 
       if (error) console.log("Error fetching contekans:", error);
       else setContekans(data as Contekan[]);
@@ -154,6 +155,8 @@ export default function Home() {
                   </button>
                 </div>
               </div>
+              <p className="text-white text-md">{contekan.deskripsi}</p>
+
               <div className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800">
                 <SyntaxHighlighter language="javascript" style={atomDark} className="p-4 rounded-lg">
                   {contekan.isi}
@@ -173,6 +176,7 @@ export default function Home() {
           <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
             <div className="bg-gray-800 p-4 rounded-lg shadow-lg max-w-full w-full h-full overflow-hidden">
               <h2 className="text-xl font-semibold mb-2">{selectedContekan.judul}</h2>
+              <p className="text-white text-md">{selectedContekan.deskripsi}</p>
               <div className="max-h-[80vh] overflow-y-auto">
                 <SyntaxHighlighter language="javascript" style={atomDark} className="p-4 rounded-lg">
                   {selectedContekan.isi}

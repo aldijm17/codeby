@@ -19,11 +19,13 @@ interface Contekan {
   judul: string;
   isi: string;
   created_at: string;
+  deskripsi: string;
 }
 
 export default function Home() {
   const [judul, setJudul] = useState('');
   const [isi, setIsi] = useState('');
+  const [deskripsi, setDeskripsi] = useState('');
   const [contekans, setContekans] = useState<Contekan[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [showForm, setShowForm] = useState(false);
@@ -53,7 +55,7 @@ export default function Home() {
         const { data, error } = await supabase
           .from('contekans')
           .select('*')
-          .order('created_at', { ascending: false });
+          .order('created_at', { ascending: true });
 
         if (error) throw error;
         setContekans(data as Contekan[]);
@@ -81,13 +83,14 @@ export default function Home() {
   }, [deletingId, countdown]);
 
   const tambahContekan = useCallback(async (e: FormEvent<HTMLFormElement>) => {
+    console.log({ judul, isi, deskripsi });
     e.preventDefault();
     if (!judul || !isi) return;
 
     try {
       const { data, error } = await supabase
         .from('contekans')
-        .insert([{ judul, isi }])
+        .insert([{ judul, isi, deskripsi: deskripsi || null }])
         .select();
 
       if (error) throw error;
@@ -95,11 +98,12 @@ export default function Home() {
       setContekans(prev => [data[0], ...prev]);
       setJudul('');
       setIsi('');
+      setDeskripsi('');
       setShowForm(false);
     } catch (error) {
       console.error("Error adding contekan:", error);
     }
-  }, [judul, isi]);
+  }, [judul, isi, deskripsi]);
 
   const handleLogout = () => {
     localStorage.removeItem('isAuthenticated');
@@ -299,6 +303,7 @@ export default function Home() {
                   )}
                 </div>
               </div>
+              <p className="text-gray-400 text-sm">{contekan.deskripsi}</p>
               <div className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800">
                 <pre className="text-gray-300 bg-gray-800 p-4 rounded-lg whitespace-pre-wrap">
                   {contekan.isi}
@@ -332,6 +337,7 @@ export default function Home() {
                   required
                 />
               </div>
+              
               <div>
                 <textarea
                   placeholder="Isi Contekan"
@@ -340,6 +346,15 @@ export default function Home() {
                   className="w-full h-32 p-2 rounded-md bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none"
                   required
                 />
+              </div>
+              <div className="">
+              
+              <textarea
+                  placeholder="Tambahkan deskripsi..."
+                  value={deskripsi}
+                  onChange={(e) => setDeskripsi(e.target.value)}
+                  className="w-full h-32 p-2 rounded-md bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none"
+              ></textarea>
               </div>
               <button 
                 type="submit"
