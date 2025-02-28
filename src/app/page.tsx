@@ -139,9 +139,9 @@ export default function Home() {
                 onClick={() => handleOpenPopup(contekan)}
                 className="mt-2 bg-gray-600 hover:bg-gray-700 text-white font-semibold py-1 px-2 rounded-md transition duration-200"
               >
-                Lihat Full
+                View More
               </button>
-              <p className="text-gray-400 text-md mt-2">Created With ❤ by: {contekan.user_display_name}</p>
+              <p className="text-gray-400 text-md mt-2">Created With ❤ by:<b> {contekan.user_display_name}</b></p>
             </div>
             
           ))}
