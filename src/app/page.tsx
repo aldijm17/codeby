@@ -170,7 +170,7 @@ export default function Home() {
               >
                 Lihat Full
               </button>
-              <p className="text-gray-400 text-md mt-2">Ditambahkan oleh: {contekan.user_display_name}</p>
+              <p className="text-gray-400 text-md mt-2">Created With ❤ by: {contekan.user_display_name}</p>
             </div>
             
           ))}
