@@ -65,8 +65,7 @@ export default function Home() {
 
   const filteredContekans = contekans.filter(contekan =>
     contekan.judul.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    contekan.isi.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    contekan.user_display_name.toLowerCase().includes(searchQuery.toLowerCase())
+    contekan.isi.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (

@@ -24,9 +24,9 @@ export default function UpdatePasswordPage() {
 
   return (
     <div className="flex justify-center items-center min-h-screen bg-gray-900">
-      <form onSubmit={handleUpdatePassword} className="bg-gray-500 p-6 rounded-lg shadow-md w-96">
+      <form onSubmit={handleUpdatePassword} className="bg-gray-800 p-6 rounded-lg shadow-md w-96">
         <h2 className="text-2xl font-bold mb-4">Update Password</h2>
-        <input type="password" placeholder="Password Baru" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full p-2 border rounded mb-3" required />
+        <input type="password" placeholder="Password Baru" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full p-2 border text-black rounded mb-3" required />
         <button type="submit" className="w-full bg-blue-500 text-white py-2 rounded">Simpan Password</button>
         {message && <p className="text-sm mt-3 text-green-500">{message}</p>}
       </form>
