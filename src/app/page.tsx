@@ -6,7 +6,6 @@ import LoginPage from './login/page';
 import { useRouter } from 'next/navigation';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { atomDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import Navbar from '../components/Navbar';
 import './globals.css';
 
 
@@ -72,10 +71,40 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gray-900 p-4">
+      <div className="max-w-7xl mx-auto space-y-6">
+        <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
+          <div className="relative flex-1 w-full">
+            <input
+              type="text"
+              placeholder="Cari contekan..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 rounded-md bg-gray-800 text-white border border-gray-700 focus:border-blue-500 focus:outline-none"
+            />
+            <svg
+              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+          </div>
+          
+          <button
+            onClick={LoginPage}
+            className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md transition duration-200 flex items-center justify-center"
+          >
+            Login
+          </button>
+        </div>
 
-<Navbar searchQuery={searchQuery} onSearchChange={setSearchQuery} />
-
-      <div className="max-w-7xl mx-auto space-y-6 mt-5">
         <div className="grid grid-cols-1 lg:grid-cols-1 gap-4">
           {filteredContekans.map((contekan) => (
             <div 
@@ -139,9 +168,9 @@ export default function Home() {
                 onClick={() => handleOpenPopup(contekan)}
                 className="mt-2 bg-gray-600 hover:bg-gray-700 text-white font-semibold py-1 px-2 rounded-md transition duration-200"
               >
-                View More
+                Lihat Full
               </button>
-              <p className="text-gray-400 text-md mt-2">Created With ❤ by:<b> {contekan.user_display_name}</b></p>
+              <p className="text-gray-400 text-md mt-2">Created With ❤ by: {contekan.user_display_name}</p>
             </div>
             
           ))}
