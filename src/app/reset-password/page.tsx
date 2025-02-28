@@ -9,7 +9,7 @@ export default function ResetPasswordPage() {
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: "https://contekan.vercel.app//update-password", // ubah contekan.vercel/app menjadi localhost:3000 jika dalam mode local
+      redirectTo: "https://contekan.vercel.app/update-password", // ubah contekan.vercel/app menjadi localhost:3000 jika dalam mode local
     });
 
     if (error) {
