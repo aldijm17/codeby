@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, FormEvent } from 'react';
 import { createClient } from '@supabase/supabase-js';
+import { User } from '@supabase/supabase-js';
 import { useRouter } from 'next/navigation';
 
 // Environment variables validation
@@ -20,6 +21,7 @@ interface Contekan {
   isi: string;
   created_at: string;
   deskripsi: string;
+  user_display_name: string;
 }
 
 export default function Home() {
@@ -33,23 +35,37 @@ export default function Home() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [countdown, setCountdown] = useState(3);
   const [deletionTimer, setDeletionTimer] = useState<NodeJS.Timeout | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   const router = useRouter();
 
   // Authentication check
   useEffect(() => {
-    const checkAuth = () => {
-      const isAuthenticated = localStorage.getItem('isAuthenticated');
-      if (!isAuthenticated) {
-        router.push('/login');
+    const checkAuth = async () => {
+      try {
+        const { data, error } = await supabase.auth.getSession();
+
+        if (error || !data.session) {
+          router.push("/login");
+        } else {
+          setUser(data.session.user);
+        }
+      } catch (error) {
+        console.error("Auth error:", error);
+        router.push("/login");
+      } finally {
+        setIsLoading(false);
       }
     };
-    
+
     checkAuth();
   }, [router]);
 
   // Fetch contekans on mount
   useEffect(() => {
+    if (!user) return; // Don't fetch data until user is authenticated
+    
     const fetchContekans = async () => {
       try {
         const { data, error } = await supabase
@@ -65,7 +81,7 @@ export default function Home() {
     };
 
     fetchContekans();
-  }, []);
+  }, [user]);
 
   // Deletion countdown effect
   useEffect(() => {
@@ -83,19 +99,23 @@ export default function Home() {
   }, [deletingId, countdown]);
 
   const tambahContekan = useCallback(async (e: FormEvent<HTMLFormElement>) => {
-    console.log({ judul, isi, deskripsi });
     e.preventDefault();
-    if (!judul || !isi) return;
+    if (!judul || !isi || !user) return;
 
     try {
       const { data, error } = await supabase
         .from('contekans')
-        .insert([{ judul, isi, deskripsi: deskripsi || null }])
+        .insert([{ 
+          judul, 
+          isi,
+          deskripsi: deskripsi || null,
+          user_display_name: user.user_metadata?.display_name || user.email // Simpan display_name
+        }])
         .select();
 
       if (error) throw error;
       
-      setContekans(prev => [data[0], ...prev]);
+      setContekans(prev => [...(data as Contekan[]), ...prev]);
       setJudul('');
       setIsi('');
       setDeskripsi('');
@@ -103,11 +123,11 @@ export default function Home() {
     } catch (error) {
       console.error("Error adding contekan:", error);
     }
-  }, [judul, isi, deskripsi]);
+  }, [judul, isi, deskripsi, user]);
 
-  const handleLogout = () => {
-    localStorage.removeItem('isAuthenticated');
-    router.push('/');
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push('/login');
   };
 
   const mulaiHapusContekan = (id: string) => {
@@ -156,9 +176,24 @@ export default function Home() {
     contekan.isi.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  // Show loading state while authentication is being checked
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <p className="text-white text-xl">Its not "Loading", its just "waiting", because Next.TS does'n have delay.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-900 p-4">
+      
       <div className="max-w-7xl mx-auto space-y-6">
+      <div className="flex items-center">
+        <h1 className="text-4xl font-bold text-white">Admin</h1>
+      </div>
+      <p className="text-gray-400 text-2xl">Welcome, {user?.user_metadata?.display_name || user?.email}</p>
+
         <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
           <div className="relative flex-1 w-full">
             <input
@@ -309,11 +344,11 @@ export default function Home() {
                   {contekan.isi}
                 </pre>
               </div>
+              <p className="text-gray-400 text-md mt-2">Ditambahkan oleh: {contekan.user_display_name}</p>
             </div>
           ))}
         </div>
       </div>
-
       {showForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-gray-800 p-6 rounded-lg w-full max-w-xl">

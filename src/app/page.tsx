@@ -19,6 +19,7 @@ interface Contekan {
   isi: string;
   created_at: string;
   deskripsi: string;
+  user_display_name: string;
 }
 
 
@@ -64,7 +65,8 @@ export default function Home() {
 
   const filteredContekans = contekans.filter(contekan =>
     contekan.judul.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    contekan.isi.toLowerCase().includes(searchQuery.toLowerCase())
+    contekan.isi.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    contekan.user_display_name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -168,7 +170,9 @@ export default function Home() {
               >
                 Lihat Full
               </button>
+              <p className="text-gray-400 text-md mt-2">Ditambahkan oleh: {contekan.user_display_name}</p>
             </div>
+            
           ))}
         </div>
 
