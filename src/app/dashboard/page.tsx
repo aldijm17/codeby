@@ -1,19 +1,16 @@
 'use client'
 
-import { useState, useEffect, useCallback, FormEvent } from 'react';
+import { useState, useEffect, useMemo, FormEvent } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { User } from '@supabase/supabase-js';
 import { useRouter } from 'next/navigation';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { atomDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
-// Environment variables validation
-if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-  throw new Error('Missing Supabase environment variables');
-}
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-);
+// ... (Inisialisasi Supabase dan tipe data tetap sama)
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 interface Contekan {
   id: string;
@@ -24,383 +21,173 @@ interface Contekan {
   user_display_name: string;
 }
 
-export default function Home() {
-  const [judul, setJudul] = useState('');
-  const [isi, setIsi] = useState('');
-  const [deskripsi, setDeskripsi] = useState('');
+// -- Komponen Ikon --
+const PlusIcon = () => (<svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>);
+const SearchIcon = () => (<svg className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>);
+const LogoutIcon = () => (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>);
+const LoadingSpinner = () => (<div className="flex justify-center items-center h-full"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div></div>);
+
+
+export default function DashboardPage() {
   const [contekans, setContekans] = useState<Contekan[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [showForm, setShowForm] = useState(false);
-  const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [countdown, setCountdown] = useState(3);
-  const [deletionTimer, setDeletionTimer] = useState<NodeJS.Timeout | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-
+  const [searchQuery, setSearchQuery] = useState('');
+  
+  // -- BARU: State untuk mengelola panel kanan --
+  const [viewMode, setViewMode] = useState<'view' | 'add' | 'edit'>('view');
+  const [currentItem, setCurrentItem] = useState<Contekan | null>(null);
+  
+  // -- BARU: State untuk form --
+  const [formState, setFormState] = useState({ judul: '', isi: '', deskripsi: '' });
+  
   const router = useRouter();
 
-  // Authentication check
+  // Fetch user dan data
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const { data, error } = await supabase.auth.getSession();
+    const initialize = async () => {
+      setIsLoading(true);
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
-        if (error || !data.session) {
-          router.push("/login");
-        } else {
-          setUser(data.session.user);
-        }
-      } catch (error) {
-        console.error("Auth error:", error);
+      if (sessionError || !session) {
         router.push("/login");
-      } finally {
-        setIsLoading(false);
+        return;
       }
-    };
+      setUser(session.user);
 
-    checkAuth();
+      const { data, error } = await supabase.from('contekans').select('*').order('created_at', { ascending: false });
+      if (error) {
+        console.error("Error fetching contekans:", error);
+      } else {
+        setContekans(data as Contekan[]);
+        if (data.length > 0) {
+            setCurrentItem(data[0]); // Tampilkan item pertama secara default
+        }
+      }
+      setIsLoading(false);
+    };
+    initialize();
   }, [router]);
 
-  // Fetch contekans on mount
-  useEffect(() => {
-    if (!user) return; // Don't fetch data until user is authenticated
-    
-    const fetchContekans = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('contekans')
-          .select('*')
-          .order('created_at', { ascending: true });
-
-        if (error) throw error;
-        setContekans(data as Contekan[]);
-      } catch (error) {
-        console.error("Error fetching contekans:", error);
-      }
-    };
-
-    fetchContekans();
-  }, [user]);
-
-  // Deletion countdown effect
-  useEffect(() => {
-    if (deletingId && countdown > 0) {
-      const timer = setTimeout(() => {
-        setCountdown(prev => prev - 1);
-      }, 1000);
-      
-      setDeletionTimer(timer);
-      
-      return () => clearTimeout(timer);
-    } else if (deletingId && countdown === 0) {
-      confirmDelete(deletingId);
-    }
-  }, [deletingId, countdown]);
-
-  const tambahContekan = useCallback(async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!judul || !isi || !user) return;
-
-    try {
-      const { data, error } = await supabase
-        .from('contekans')
-        .insert([{ 
-          judul, 
-          isi,
-          deskripsi: deskripsi || null,
-          user_display_name: user.user_metadata?.display_name || user.email // Simpan display_name
-        }])
-        .select();
-
-      if (error) throw error;
-      
-      setContekans(prev => [...(data as Contekan[]), ...prev]);
-      setJudul('');
-      setIsi('');
-      setDeskripsi('');
-      setShowForm(false);
-    } catch (error) {
-      console.error("Error adding contekan:", error);
-    }
-  }, [judul, isi, deskripsi, user]);
+  const filteredContekans = useMemo(() => {
+    return contekans.filter(c => c.judul.toLowerCase().includes(searchQuery.toLowerCase()));
+  }, [contekans, searchQuery]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    router.push('/login');
+    router.push('/');
   };
+  
+  // -- BARU: Handler untuk form --
+  const handleFormSubmit = async (e: FormEvent<HTMLFormElement>) => {
+      e.preventDefault();
+      if (!user) return;
 
-  const mulaiHapusContekan = (id: string) => {
-    setDeletingId(id);
-    setCountdown(3);
-  };
-
-  const batalkanHapus = () => {
-    if (deletionTimer) {
-      clearTimeout(deletionTimer);
-    }
-    setDeletingId(null);
-    setCountdown(3);
-  };
-
-  const confirmDelete = async (id: string) => {
-    try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('contekans')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
+        .insert([{ 
+          ...formState, 
+          user_display_name: user.user_metadata?.display_name || user.email 
+        }])
+        .select();
       
-      setContekans(prev => prev.filter(contekan => contekan.id !== id));
-    } catch (error) {
-      console.error("Error deleting contekan:", error);
-    } finally {
-      setDeletingId(null);
-      setCountdown(3);
-    }
+      if (error) {
+          alert("Gagal menambahkan: " + error.message);
+      } else if (data) {
+          setContekans(prev => [data[0], ...prev]);
+          setCurrentItem(data[0]);
+          setViewMode('view');
+      }
+  };
+  
+  // -- BARU: Handler untuk menghapus --
+  const handleDelete = async (id: string) => {
+      if (confirm("Apakah Anda yakin ingin menghapus contekan ini?")) {
+          const { error } = await supabase.from('contekans').delete().eq('id', id);
+          if (error) {
+              alert("Gagal menghapus: " + error.message);
+          } else {
+              const newContekans = contekans.filter(c => c.id !== id);
+              setContekans(newContekans);
+              setCurrentItem(newContekans.length > 0 ? newContekans[0] : null);
+              setViewMode('view');
+          }
+      }
   };
 
-  const handleCopy = async (text: string, id: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopiedId(id);
-      setTimeout(() => setCopiedId(null), 2000);
-    } catch (error) {
-      console.error("Error copying to clipboard:", error);
-    }
-  };
-
-  const filteredContekans = contekans.filter(contekan =>
-    contekan.judul.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    contekan.isi.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  // Show loading state while authentication is being checked
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <p className="text-white text-xl">Its not "Loading", its just "waiting", because Next.TS does'n have delay.</p>
-      </div>
-    );
+    return <div className="min-h-screen bg-gray-900 flex items-center justify-center"><LoadingSpinner /></div>;
   }
-
+  
   return (
-    <div className="min-h-screen bg-gray-900 p-4">
+    <div className="h-screen w-screen bg-gray-900 text-white flex flex-col md:flex-row overflow-hidden">
       
-      <div className="max-w-7xl mx-auto space-y-6">
-      <div className="flex items-center">
-        <h1 className="text-4xl font-bold text-white">Admin</h1>
-      </div>
-      <p className="text-gray-400 text-2xl">Welcome, {user?.user_metadata?.display_name || user?.email}</p>
-
-        <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
-          <div className="relative flex-1 w-full">
-            <input
-              type="text"
-              placeholder="Cari contekan..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 rounded-md bg-gray-800 text-white border border-gray-700 focus:border-blue-500 focus:outline-none"
-            />
-            <svg
-              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <circle cx="11" cy="11" r="8" />
-              <line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
+      {/* Kolom Kiri: Navigasi & Daftar */}
+      <aside className="w-full md:w-1/3 lg:w-1/4 bg-gray-900 border-r border-gray-800 flex flex-col">
+        <header className="p-4 border-b border-gray-800 flex justify-between items-center">
+          <div>
+            <h1 className="font-bold text-lg">Admin Dashboard</h1>
+            <p className="text-sm text-gray-400">Welcome, {user?.user_metadata?.display_name || user?.email}</p>
           </div>
-          
-          <button
-            onClick={() => setShowForm(true)}
-            className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md transition duration-200 flex items-center justify-center"
-            disabled={deletingId !== null}
-          >
-            <svg
-              className="w-5 h-5 mr-2"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <line x1="12" y1="5" x2="12" y2="19" />
-              <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-            Tambah Contekan
-          </button>
-          <button
-            onClick={handleLogout}
-            className="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-md transition duration-200 flex items-center justify-center"
-          >
-            Log Out
-          </button>
+          <button onClick={handleLogout} className="p-2 rounded-full hover:bg-gray-700 transition-colors" title="Logout"><LogoutIcon /></button>
+        </header>
+        <div className="p-4 space-y-4">
+          <button onClick={() => setViewMode('add')} className="w-full flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors"><PlusIcon /> Tambah Baru</button>
+          <div className="relative"><input type="text" placeholder="Cari contekan..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-10 pr-4 py-2 bg-gray-800 border border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500"/><SearchIcon /></div>
         </div>
-
-        <div className="grid grid-cols-1 gap-4">
-          {filteredContekans.map((contekan) => (
-            <div 
-              key={contekan.id} 
-              className="bg-gray-800 rounded-lg border border-gray-700 p-4 relative group h-64 flex flex-col"
-            >
-              <div className="flex justify-between items-start mb-3">
-                <h3 className="text-xl font-semibold text-white">{contekan.judul}</h3>
-                <div className="flex space-x-2">
-                  <button
-                    onClick={() => handleCopy(contekan.isi, contekan.id)}
-                    className={`p-1 rounded-md transition-colors duration-200 ${
-                      copiedId === contekan.id 
-                        ? 'bg-green-600 hover:bg-green-700' 
-                        : 'bg-blue-600 hover:bg-blue-700'
-                    }`}
-                    disabled={deletingId !== null}
-                  >
-                    {copiedId === contekan.id ? (
-                      <svg
-                        className="w-5 h-5 text-white"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M5 13l4 4L19 7"
-                        />
-                      </svg>
-                    ) : (
-                      <svg
-                        className="w-5 h-5 text-white"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-                        />
-                      </svg>
-                    )}
-                  </button>
-
-                  {deletingId === contekan.id ? (
-                    <div className="flex items-center space-x-2">
-                      <span className="text-red-500 text-sm">Hapus dalam {countdown}s</span>
-                      <button
-                        onClick={batalkanHapus}
-                        className="bg-gray-600 hover:bg-gray-700 text-white p-1 rounded-md"
-                      >
-                        <svg
-                          className="w-5 h-5"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M6 18L18 6M6 6l12 12"
-                          />
-                        </svg>
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => mulaiHapusContekan(contekan.id)}
-                      className="text-gray-500 hover:text-red-500 transition-colors duration-200"
-                      disabled={deletingId !== null}
-                    >
-                      <svg
-                        className="w-5 h-5"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M18 6L6 18M6 6l12 12" />
-                      </svg>
-                    </button>
-                  )}
-                </div>
-              </div>
-              <p className="text-gray-400 text-sm">{contekan.deskripsi}</p>
-              <div className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800">
-                <pre className="text-gray-300 bg-gray-800 p-4 rounded-lg whitespace-pre-wrap">
-                  {contekan.isi}
-                </pre>
-              </div>
-              <p className="text-gray-400 text-md mt-2">Ditambahkan oleh: {contekan.user_display_name}</p>
-            </div>
+        <nav className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-800 p-2">
+          {filteredContekans.map(c => (
+            <a key={c.id} onClick={() => { setCurrentItem(c); setViewMode('view'); }} className={`block p-3 rounded-lg cursor-pointer mb-1 transition-colors ${currentItem?.id === c.id && viewMode !== 'add' ? 'bg-blue-600/20 text-blue-300' : 'hover:bg-gray-800'}`}>
+              <h4 className="font-semibold text-white truncate">{c.judul}</h4>
+              <p className="text-xs text-gray-400 truncate">{c.deskripsi}</p>
+            </a>
           ))}
-        </div>
-      </div>
-      {showForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-gray-800 p-6 rounded-lg w-full max-w-xl">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-white">Tambah Contekan Baru</h2>
-              <button 
-                onClick={() => setShowForm(false)}
-                className="text-gray-400 hover:text-white"
-              >
-                ✕
-              </button>
+        </nav>
+      </aside>
+      
+      {/* Kolom Kanan: Panel Konten Dinamis */}
+      <main className="flex-1 bg-gray-800/50 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-800 p-6 sm:p-8">
+        {/* Tampilan untuk MELIHAT item */}
+        {viewMode === 'view' && currentItem && (
+          <div>
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <h2 className="text-2xl font-bold text-white">{currentItem.judul}</h2>
+                <p className="text-gray-400 mt-1">{currentItem.deskripsi}</p>
+                <p className="text-xs text-gray-500 mt-2">Dibuat oleh: {currentItem.user_display_name}</p>
+              </div>
+              <div className="flex space-x-2">
+                 <button onClick={() => handleDelete(currentItem.id)} className="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg">Hapus</button>
+              </div>
             </div>
-            <form onSubmit={tambahContekan} className="space-y-4">
-              <div>
-                <input
-                  type="text"
-                  placeholder="Judul Contekan"
-                  value={judul}
-                  onChange={(e) => setJudul(e.target.value)}
-                  className="w-full p-2 rounded-md bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none"
-                  required
-                />
+            <SyntaxHighlighter language="javascript" style={atomDark} className="rounded-lg !p-4 !text-base">{currentItem.isi}</SyntaxHighlighter>
+          </div>
+        )}
+        
+        {/* Tampilan untuk MENAMBAH item */}
+        {viewMode === 'add' && (
+          <div>
+            <h2 className="text-2xl font-bold text-white mb-4">Tambah Contekan Baru</h2>
+            <form onSubmit={handleFormSubmit} className="space-y-4">
+              <input type="text" placeholder="Judul Contekan" onChange={(e) => setFormState({...formState, judul: e.target.value})} className="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg" required/>
+              <textarea placeholder="Deskripsi singkat..." onChange={(e) => setFormState({...formState, deskripsi: e.target.value})} className="w-full h-24 p-2 bg-gray-700 border border-gray-600 rounded-lg"/>
+              <textarea placeholder="// Masukkan kode di sini" onChange={(e) => setFormState({...formState, isi: e.target.value})} className="w-full h-48 p-2 bg-gray-700 border border-gray-600 rounded-lg font-mono" required/>
+              <div className="flex justify-end space-x-2">
+                <button type="button" onClick={() => setViewMode('view')} className="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg">Batal</button>
+                <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg">Simpan</button>
               </div>
-              
-              <div>
-                <textarea
-                  placeholder="Isi Contekan"
-                  value={isi}
-                  onChange={(e) => setIsi(e.target.value)}
-                  className="w-full h-32 p-2 rounded-md bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none"
-                  required
-                />
-              </div>
-              <div className="">
-              
-              <textarea
-                  placeholder="Tambahkan deskripsi..."
-                  value={deskripsi}
-                  onChange={(e) => setDeskripsi(e.target.value)}
-                  className="w-full h-32 p-2 rounded-md bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none"
-              ></textarea>
-              </div>
-              <button 
-                type="submit"
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md transition duration-200"
-              >
-                Tambah Contekan
-              </button>
             </form>
           </div>
-        </div>
-      )}
+        )}
+        
+        {/* Pesan jika tidak ada item yang dipilih */}
+        {!currentItem && viewMode === 'view' && !isLoading && (
+            <div className="flex flex-col items-center justify-center h-full text-center text-gray-500">
+                <h2 className="text-xl font-semibold">Selamat Datang di Dashboard</h2>
+                <p>Pilih item dari daftar di kiri atau tambah contekan baru.</p>
+            </div>
+        )}
+      </main>
     </div>
   );
 }
