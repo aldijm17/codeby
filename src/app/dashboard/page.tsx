@@ -19,6 +19,7 @@ interface Contekan {
   created_at: string;
   deskripsi: string;
   user_display_name: string;
+  user_id: string; // Menambahkan user_id
 }
 
 // -- Komponen Ikon --
@@ -33,14 +34,15 @@ export default function DashboardPage() {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  
+  const [filter, setFilter] = useState<'all' | 'mine'>('all'); // State untuk filter
+
   // -- BARU: State untuk mengelola panel kanan --
   const [viewMode, setViewMode] = useState<'view' | 'add' | 'edit'>('view');
   const [currentItem, setCurrentItem] = useState<Contekan | null>(null);
-  
+
   // -- BARU: State untuk form --
-  const [formState, setFormState] = useState({ judul: '', isi: '', deskripsi: '' });
-  
+  const [formState, setFormState] = useState({ id: '', judul: '', isi: '', deskripsi: '' });
+
   const router = useRouter();
 
   // Fetch user dan data
@@ -70,37 +72,72 @@ export default function DashboardPage() {
   }, [router]);
 
   const filteredContekans = useMemo(() => {
-    return contekans.filter(c => c.judul.toLowerCase().includes(searchQuery.toLowerCase()));
-  }, [contekans, searchQuery]);
+    let filtered = contekans.filter(c => c.judul.toLowerCase().includes(searchQuery.toLowerCase()));
+    if (filter === 'mine' && user) {
+        filtered = filtered.filter(c => c.user_id === user.id);
+    }
+    return filtered;
+  }, [contekans, searchQuery, filter, user]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
     router.push('/');
   };
-  
-  // -- BARU: Handler untuk form --
+
+  const handleAddNew = () => {
+    setFormState({ id: '', judul: '', isi: '', deskripsi: '' });
+    setViewMode('add');
+  };
+
+  const handleEdit = (contekan: Contekan) => {
+    setFormState(contekan);
+    setViewMode('edit');
+  };
+
   const handleFormSubmit = async (e: FormEvent<HTMLFormElement>) => {
       e.preventDefault();
       if (!user) return;
 
-      const { data, error } = await supabase
-        .from('contekans')
-        .insert([{ 
-          ...formState, 
-          user_display_name: user.user_metadata?.display_name || user.email 
-        }])
-        .select();
-      
-      if (error) {
-          alert("Gagal menambahkan: " + error.message);
-      } else if (data) {
-          setContekans(prev => [data[0], ...prev]);
-          setCurrentItem(data[0]);
-          setViewMode('view');
+      if (viewMode === 'add') {
+        const { data, error } = await supabase
+            .from('contekans')
+            .insert([{
+                judul: formState.judul,
+                isi: formState.isi,
+                deskripsi: formState.deskripsi,
+                user_display_name: user.user_metadata?.display_name || user.email,
+                user_id: user.id
+            }])
+            .select();
+
+        if (error) {
+            alert("Gagal menambahkan: " + error.message);
+        } else if (data) {
+            setContekans(prev => [data[0], ...prev]);
+            setCurrentItem(data[0]);
+            setViewMode('view');
+        }
+      } else if (viewMode === 'edit') {
+        const { data, error } = await supabase
+          .from('contekans')
+          .update({
+            judul: formState.judul,
+            isi: formState.isi,
+            deskripsi: formState.deskripsi
+          })
+          .eq('id', formState.id)
+          .select();
+
+        if (error) {
+            alert("Gagal memperbarui: " + error.message);
+        } else if (data) {
+            setContekans(prev => prev.map(c => c.id === formState.id ? data[0] : c));
+            setCurrentItem(data[0]);
+            setViewMode('view');
+        }
       }
   };
-  
-  // -- BARU: Handler untuk menghapus --
+
   const handleDelete = async (id: string) => {
       if (confirm("Apakah Anda yakin ingin menghapus contekan ini?")) {
           const { error } = await supabase.from('contekans').delete().eq('id', id);
@@ -118,11 +155,10 @@ export default function DashboardPage() {
   if (isLoading) {
     return <div className="min-h-screen bg-gray-900 flex items-center justify-center"><LoadingSpinner /></div>;
   }
-  
+
   return (
     <div className="h-screen w-screen bg-gray-900 text-white flex flex-col md:flex-row overflow-hidden">
-      
-      {/* Kolom Kiri: Navigasi & Daftar */}
+
       <aside className="w-full md:w-1/3 lg:w-1/4 bg-gray-900 border-r border-gray-800 flex flex-col">
         <header className="p-4 border-b border-gray-800 flex justify-between items-center">
           <div>
@@ -132,7 +168,11 @@ export default function DashboardPage() {
           <button onClick={handleLogout} className="p-2 rounded-full hover:bg-gray-700 transition-colors" title="Logout"><LogoutIcon /></button>
         </header>
         <div className="p-4 space-y-4">
-          <button onClick={() => setViewMode('add')} className="w-full flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors"><PlusIcon /> Tambah Baru</button>
+          <button onClick={handleAddNew} className="w-full flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors"><PlusIcon /> Tambah Baru</button>
+          <div className="flex space-x-2">
+              <button onClick={() => setFilter('all')} className={`w-full py-2 px-4 rounded-lg transition-colors ${filter === 'all' ? 'bg-blue-600' : 'bg-gray-700 hover:bg-gray-600'}`}>Semua</button>
+              <button onClick={() => setFilter('mine')} className={`w-full py-2 px-4 rounded-lg transition-colors ${filter === 'mine' ? 'bg-blue-600' : 'bg-gray-700 hover:bg-gray-600'}`}>Contekan Saya</button>
+          </div>
           <div className="relative"><input type="text" placeholder="Cari contekan..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-10 pr-4 py-2 bg-gray-800 border border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500"/><SearchIcon /></div>
         </div>
         <nav className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-800 p-2">
@@ -144,10 +184,8 @@ export default function DashboardPage() {
           ))}
         </nav>
       </aside>
-      
-      {/* Kolom Kanan: Panel Konten Dinamis */}
+
       <main className="flex-1 bg-gray-800/50 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-800 p-6 sm:p-8">
-        {/* Tampilan untuk MELIHAT item */}
         {viewMode === 'view' && currentItem && (
           <div>
             <div className="flex justify-between items-start mb-4">
@@ -157,21 +195,25 @@ export default function DashboardPage() {
                 <p className="text-xs text-gray-500 mt-2">Dibuat oleh: {currentItem.user_display_name}</p>
               </div>
               <div className="flex space-x-2">
-                 <button onClick={() => handleDelete(currentItem.id)} className="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg">Hapus</button>
+                 {user && currentItem && user.id === currentItem.user_id && (
+                    <>
+                        <button onClick={() => handleEdit(currentItem)} className="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg">Edit</button>
+                        <button onClick={() => handleDelete(currentItem.id)} className="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg">Hapus</button>
+                    </>
+                 )}
               </div>
             </div>
             <SyntaxHighlighter language="javascript" style={atomDark} className="rounded-lg !p-4 !text-base">{currentItem.isi}</SyntaxHighlighter>
           </div>
         )}
-        
-        {/* Tampilan untuk MENAMBAH item */}
-        {viewMode === 'add' && (
+
+        {(viewMode === 'add' || viewMode === 'edit') && (
           <div>
-            <h2 className="text-2xl font-bold text-white mb-4">Tambah Contekan Baru</h2>
+            <h2 className="text-2xl font-bold text-white mb-4">{viewMode === 'add' ? 'Tambah Contekan Baru' : 'Edit Contekan'}</h2>
             <form onSubmit={handleFormSubmit} className="space-y-4">
-              <input type="text" placeholder="Judul Contekan" onChange={(e) => setFormState({...formState, judul: e.target.value})} className="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg" required/>
-              <textarea placeholder="Deskripsi singkat..." onChange={(e) => setFormState({...formState, deskripsi: e.target.value})} className="w-full h-24 p-2 bg-gray-700 border border-gray-600 rounded-lg"/>
-              <textarea placeholder="// Masukkan kode di sini" onChange={(e) => setFormState({...formState, isi: e.target.value})} className="w-full h-48 p-2 bg-gray-700 border border-gray-600 rounded-lg font-mono" required/>
+              <input type="text" placeholder="Judul Contekan" value={formState.judul} onChange={(e) => setFormState({...formState, judul: e.target.value})} className="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg" required/>
+              <textarea placeholder="Deskripsi singkat..." value={formState.deskripsi} onChange={(e) => setFormState({...formState, deskripsi: e.target.value})} className="w-full h-24 p-2 bg-gray-700 border border-gray-600 rounded-lg"/>
+              <textarea placeholder="// Masukkan kode di sini" value={formState.isi} onChange={(e) => setFormState({...formState, isi: e.target.value})} className="w-full h-48 p-2 bg-gray-700 border border-gray-600 rounded-lg font-mono" required/>
               <div className="flex justify-end space-x-2">
                 <button type="button" onClick={() => setViewMode('view')} className="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg">Batal</button>
                 <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg">Simpan</button>
@@ -179,8 +221,7 @@ export default function DashboardPage() {
             </form>
           </div>
         )}
-        
-        {/* Pesan jika tidak ada item yang dipilih */}
+
         {!currentItem && viewMode === 'view' && !isLoading && (
             <div className="flex flex-col items-center justify-center h-full text-center text-gray-500">
                 <h2 className="text-xl font-semibold">Selamat Datang di Dashboard</h2>
