@@ -156,7 +156,7 @@ export default function DashboardPage() {
                 user_display_name: user.user_metadata?.display_name || user.email,
                 user_id: user.id
             }])
-            .select();
+            .select(); 
 
         if (error) {
             showNotification("Gagal Menambahkan", error.message);
