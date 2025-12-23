@@ -2,13 +2,8 @@
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
-
-// Komponen Ikon
-const EmailIcon = () => (
-    <svg className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
-    </svg>
-);
+import { motion } from "framer-motion";
+import { Mail, ArrowRight, Loader2, ArrowLeft } from "lucide-react";
 
 export default function ResetPasswordPage() {
   const [email, setEmail] = useState("");
@@ -29,46 +24,100 @@ export default function ResetPasswordPage() {
     if (error) {
       setError(error.message);
     } else {
-      setMessage("Link reset password telah dikirim ke email Anda. Silakan periksa kotak masuk.");
+      setMessage("Reset link sent to your email. Please check your inbox.");
     }
     setLoading(false);
   };
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gray-900 p-4">
-      <div className="w-full max-w-md bg-gray-800/50 backdrop-blur-lg border border-gray-700 rounded-2xl p-8 shadow-2xl">
+    <div className="flex justify-center items-center min-h-screen p-4 relative overflow-hidden">
+      {/* Decorative Background Elements */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-blue-500/10 blur-[100px] rounded-full pointer-events-none -z-10" />
+
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+        className="w-full max-w-md glass p-8 rounded-3xl shadow-2xl relative z-10"
+      >
         <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-white">Reset Password</h1>
-            <p className="text-gray-400 mt-2">Masukkan email Anda untuk menerima link reset.</p>
+          <motion.h1
+            initial={{ y: -20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.2 }}
+            className="text-3xl font-bold text-slate-100"
+          >
+            Reset Password
+          </motion.h1>
+          <motion.p
+            initial={{ y: -10, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.3 }}
+            className="text-slate-400 mt-2"
+          >
+            Enter your email to receive instructions
+          </motion.p>
         </div>
 
         {message && (
-            <div className="bg-green-500/20 border border-green-500 text-green-300 text-sm rounded-lg p-3 mb-4 text-center">
-                {message}
-            </div>
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-green-500/10 border border-green-500/50 text-green-400 text-sm rounded-xl p-4 mb-6 text-center"
+          >
+            {message}
+          </motion.div>
         )}
         {error && (
-            <div className="bg-red-500/20 border border-red-500 text-red-300 text-sm rounded-lg p-3 mb-4 text-center">
-                {error}
-            </div>
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-red-500/10 border border-red-500/50 text-red-400 text-sm rounded-xl p-4 mb-6 text-center"
+          >
+            {error}
+          </motion.div>
         )}
 
         <form onSubmit={handleResetPassword} className="space-y-6">
-          <div className="relative">
-            <input type="email" placeholder="Email terdaftar" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full pl-10 pr-4 py-3 bg-gray-800 border border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" required />
-            <EmailIcon />
+          <div className="relative group">
+            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 group-focus-within:text-cyan-400 transition-colors" />
+            <input
+              type="email"
+              placeholder="Registered Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full pl-12 pr-4 py-3.5 bg-slate-900/50 border border-slate-700 rounded-xl text-slate-200 placeholder:text-slate-500 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 focus:outline-none transition-all"
+              required
+            />
           </div>
-          <button type="submit" disabled={loading} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition-all duration-300 disabled:opacity-50">
-            {loading ? 'Mengirim...' : 'Kirim Link Reset'}
-          </button>
+
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            type="submit"
+            disabled={loading}
+            className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-cyan-900/20 transition-all flex items-center justify-center gap-2 disabled:opacity-70"
+          >
+            {loading ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                <span>Sending...</span>
+              </>
+            ) : (
+              <>
+                <span>Send Reset Link</span>
+                <ArrowRight className="w-5 h-5" />
+              </>
+            )}
+          </motion.button>
         </form>
-         <p className="text-sm text-center mt-6 text-gray-400">
-          Ingat password Anda?{" "}
-          <Link href="/login" className="font-semibold text-blue-500 hover:underline">
-            Kembali ke Login
+
+        <div className="mt-8 text-center">
+          <Link href="/login" className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors">
+            <ArrowLeft className="w-4 h-4" /> Back to Login
           </Link>
-        </p>
-      </div>
+        </div>
+      </motion.div>
     </div>
   );
 }
