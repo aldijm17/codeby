@@ -34,7 +34,7 @@ interface Contekan {
     created_at: string;
     deskripsi: string;
     user_display_name: string;
-    file_url?: string; // Added file_url property
+    file_content?: string;
 }
 
 const LoadingSpinner = () => (
