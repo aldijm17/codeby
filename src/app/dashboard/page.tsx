@@ -86,7 +86,7 @@ export default function DashboardPage() {
     judul: string;
     isi: string;
     deskripsi: string;
-    file_url?: string;
+    file_content?: string;
     file?: File | null;
   }
 
