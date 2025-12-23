@@ -148,20 +148,20 @@ export default function Home() {
                                 <Terminal className="w-8 h-8 text-white" />
                             </div>
                         </div>
-                        <h1 className="text-4xl sm:text-5xl lg:text-7xl font-extrabold tracking-tight relative">
+                        <h1 className="text-3xl sm:text-5xl lg:text-7xl font-extrabold tracking-tight relative">
                             <span className="bg-clip-text text-transparent bg-gradient-to-r from-cyan-300 via-blue-400 to-purple-400 animate-gradient-xy">
                                 CodeBy
                             </span>
                             <span className="absolute -inset-1 blur-2xl bg-gradient-to-r from-cyan-400 to-purple-600 opacity-20 animate-gradient-xy"></span>
                         </h1>
-                        <p className="mt-4 text-slate-400 text-lg sm:text-xl max-w-lg mx-auto leading-relaxed">
+                        <p className="mt-4 text-slate-400 text-base sm:text-xl max-w-lg mx-auto leading-relaxed">
                             Koleksi contekan kodingan <span className="text-cyan-400 font-semibold text-glow">premium</span> untuk developer modern.
                         </p>
                     </motion.div>
                 </header>
 
                 <div className="glass rounded-2xl p-4 mb-8 sticky top-4 z-20 shadow-2xl shadow-black/20 hover:border-cyan-500/30 transition-colors">
-                    <div className="flex flex-col sm:flex-row gap-4 items-center">
+                    <div className="flex flex-col md:flex-row gap-4 items-center">
                         <div className="relative flex-1 w-full group">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5 group-focus-within:text-cyan-400 transition-colors" />
                             <input
@@ -173,17 +173,17 @@ export default function Home() {
                             />
                         </div>
 
-                        <div className="flex items-center gap-3 w-full sm:w-auto">
-                            <div className="flex p-1 bg-slate-900/50 rounded-xl border border-slate-700/50">
+                        <div className="flex items-center gap-3 w-full md:w-auto">
+                            <div className="flex p-1 bg-slate-900/50 rounded-xl border border-slate-700/50 w-full md:w-auto justify-between md:justify-start">
                                 <button
                                     onClick={() => setActiveFilter('terbaru')}
-                                    className={`px-4 py-2 text-sm font-medium rounded-lg transition-all ${activeFilter === 'terbaru' ? 'bg-slate-700 text-white shadow-lg shadow-cyan-900/20' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'}`}
+                                    className={`flex-1 md:flex-none px-4 py-2 text-sm font-medium rounded-lg transition-all ${activeFilter === 'terbaru' ? 'bg-slate-700 text-white shadow-lg shadow-cyan-900/20' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'}`}
                                 >
                                     Terbaru
                                 </button>
                                 <button
                                     onClick={() => setActiveFilter('terlama')}
-                                    className={`px-4 py-2 text-sm font-medium rounded-lg transition-all ${activeFilter === 'terlama' ? 'bg-slate-700 text-white shadow-lg shadow-cyan-900/20' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'}`}
+                                    className={`flex-1 md:flex-none px-4 py-2 text-sm font-medium rounded-lg transition-all ${activeFilter === 'terlama' ? 'bg-slate-700 text-white shadow-lg shadow-cyan-900/20' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'}`}
                                 >
                                     Terlama
                                 </button>
@@ -289,13 +289,13 @@ export default function Home() {
                                 transition={{ type: "spring", damping: 30, stiffness: 300 }}
                                 className="fixed top-0 right-0 h-full w-full md:w-2/3 lg:w-1/2 glass-panel shadow-2xl z-50 flex flex-col"
                             >
-                                <div className="p-6 border-b border-slate-700/50 flex justify-between items-start bg-slate-900/40">
+                                <div className="p-4 sm:p-6 border-b border-slate-700/50 flex justify-between items-start bg-slate-900/40">
                                     <div>
                                         <motion.h2
                                             initial={{ opacity: 0, y: 10 }}
                                             animate={{ opacity: 1, y: 0 }}
                                             transition={{ delay: 0.2 }}
-                                            className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400"
+                                            className="text-xl sm:text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400"
                                         >
                                             {selectedContekan.judul}
                                         </motion.h2>
@@ -303,7 +303,7 @@ export default function Home() {
                                             initial={{ opacity: 0 }}
                                             animate={{ opacity: 1 }}
                                             transition={{ delay: 0.3 }}
-                                            className="flex items-center gap-4 mt-3 text-xs text-slate-500"
+                                            className="flex flex-wrap items-center gap-3 sm:gap-4 mt-3 text-xs text-slate-500"
                                         >
                                             <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {new Date(selectedContekan.created_at).toLocaleDateString('id-ID', { dateStyle: 'long' })}</span>
                                             {selectedContekan.user_display_name && <span className="flex items-center gap-1"><User className="w-3 h-3" /> {selectedContekan.user_display_name}</span>}
