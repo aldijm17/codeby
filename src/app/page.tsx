@@ -59,6 +59,9 @@ export default function Home() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  // User Session State
+  const [currentUser, setCurrentUser] = useState<any>(null);
+
   // Add Snippet State
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -83,6 +86,17 @@ export default function Home() {
       }
     };
     fetchContekans();
+
+    // Fetch Current User
+    const fetchUser = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user) {
+        setCurrentUser(user);
+      }
+    };
+    fetchUser();
   }, []);
 
   useEffect(() => {
@@ -285,9 +299,17 @@ export default function Home() {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  className="p-3 rounded-xl bg-slate-900/50 border border-slate-700/50 hover:bg-slate-800 hover:border-cyan-500/30 transition-all text-slate-300 hover:text-cyan-400 hover:shadow-lg hover:shadow-cyan-900/20 flex-shrink-0"
+                  className="p-1 rounded-full bg-slate-900/50 border border-slate-700/50 hover:bg-slate-800 hover:border-cyan-500/30 transition-all text-slate-300 hover:shadow-lg hover:shadow-cyan-900/20 flex-shrink-0 relative overflow-hidden flex items-center justify-center w-12 h-12"
                 >
-                  <User className="w-5 h-5" />
+                  {currentUser?.user_metadata?.avatar_url ? (
+                    <img
+                      src={currentUser.user_metadata.avatar_url}
+                      alt="Profile"
+                      className="w-full h-full object-cover rounded-full"
+                    />
+                  ) : (
+                    <User className="w-5 h-5 group-hover:text-cyan-400 text-slate-400" />
+                  )}
                 </motion.button>
                 <AnimatePresence>
                   {isDropdownOpen && (
@@ -297,18 +319,42 @@ export default function Home() {
                       exit={{ opacity: 0, scale: 0.95, y: 10 }}
                       className="absolute right-0 mt-2 w-48 bg-slate-900 border border-slate-700 rounded-xl shadow-xl overflow-hidden z-50 ring-1 ring-white/10"
                     >
-                      <Link
-                        href="/login"
-                        className="flex items-center gap-2 px-4 py-3 text-sm text-slate-300 hover:bg-cyan-500/10 hover:text-cyan-400 transition-colors"
-                      >
-                        Login
-                      </Link>
-                      <Link
-                        href="/register/admin"
-                        className="flex items-center gap-2 px-4 py-3 text-sm text-slate-300 hover:bg-cyan-500/10 hover:text-cyan-400 transition-colors"
-                      >
-                        Register
-                      </Link>
+                      {currentUser ? (
+                        <>
+                          <div className="px-4 py-3 border-b border-slate-800">
+                            <p className="text-sm font-semibold text-slate-200 truncate">
+                              {currentUser.user_metadata?.display_name ||
+                                "User"}
+                            </p>
+                            <p className="text-xs text-slate-500 truncate">
+                              @
+                              {currentUser.user_metadata?.username ||
+                                "username"}
+                            </p>
+                          </div>
+                          <Link
+                            href="/dashboard"
+                            className="flex items-center gap-2 px-4 py-3 text-sm text-slate-300 hover:bg-cyan-500/10 hover:text-cyan-400 transition-colors"
+                          >
+                            Dashboard
+                          </Link>
+                        </>
+                      ) : (
+                        <>
+                          <Link
+                            href="/login"
+                            className="flex items-center gap-2 px-4 py-3 text-sm text-slate-300 hover:bg-cyan-500/10 hover:text-cyan-400 transition-colors"
+                          >
+                            Login
+                          </Link>
+                          <Link
+                            href="/register/admin"
+                            className="flex items-center gap-2 px-4 py-3 text-sm text-slate-300 hover:bg-cyan-500/10 hover:text-cyan-400 transition-colors"
+                          >
+                            Register
+                          </Link>
+                        </>
+                      )}
                     </motion.div>
                   )}
                 </AnimatePresence>

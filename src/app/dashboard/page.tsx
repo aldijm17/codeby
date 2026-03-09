@@ -26,6 +26,7 @@ import {
   Check,
   Tag,
 } from "lucide-react";
+import Link from "next/link";
 import "../globals.css";
 
 interface Contekan {
@@ -135,15 +136,15 @@ export default function DashboardPage() {
     const initialize = async () => {
       setIsLoading(true);
       const {
-        data: { session },
-        error: sessionError,
-      } = await supabase.auth.getSession();
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
 
-      if (sessionError || !session) {
+      if (userError || !user) {
         router.push("/login");
         return;
       }
-      setUser(session.user);
+      setUser(user);
 
       const { data, error } = await supabase
         .from("contekans")
@@ -207,8 +208,16 @@ export default function DashboardPage() {
   }, [contekans, searchQuery, filter, user]);
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    router.push("/");
+    try {
+      await supabase.auth.signOut();
+    } catch (error) {
+      console.error("Logout error, forcing clear session", error);
+    } finally {
+      // Force clear local storage to ensure the user is actually un-authenticated on the client
+      localStorage.removeItem("supabase.auth.token");
+      localStorage.clear();
+      router.push("/");
+    }
   };
 
   const handleAddNew = () => {
@@ -393,17 +402,32 @@ export default function DashboardPage() {
           className={`fixed md:relative w-72 h-full bg-slate-900 border-r border-slate-800 flex flex-col z-40 md:translate-x-0 transition-transform duration-300 ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}`}
         >
           <header className="p-6 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-gradient-to-br from-cyan-400 to-blue-600 rounded-lg">
-                <Code2 className="w-5 h-5 text-white" />
+            <Link
+              href="/dashboard/profile"
+              className="flex items-center gap-3 w-full hover:bg-slate-800/50 p-2 -m-2 rounded-xl transition-colors cursor-pointer group"
+            >
+              <div className="w-10 h-10 rounded-full overflow-hidden border border-slate-700 bg-slate-800 flex items-center justify-center shrink-0">
+                {user?.user_metadata?.avatar_url ? (
+                  <img
+                    src={user.user_metadata.avatar_url}
+                    alt="Profile"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <UserIcon className="w-5 h-5 text-slate-400 group-hover:text-cyan-400 transition-colors" />
+                )}
               </div>
-              <div>
-                <h1 className="font-bold text-lg text-slate-100">Dashboard</h1>
-                <p className="text-xs text-slate-500 truncate max-w-[150px]">
-                  {user?.user_metadata?.display_name || user?.email}
+              <div className="flex-1 min-w-0">
+                <h1 className="font-bold text-sm text-slate-100 truncate group-hover:text-cyan-400 transition-colors">
+                  {user?.user_metadata?.display_name ||
+                    user?.email?.split("@")[0] ||
+                    "User"}
+                </h1>
+                <p className="text-xs text-slate-500 truncate group-hover:text-slate-400 transition-colors">
+                  @{user?.user_metadata?.username || "username"}
                 </p>
               </div>
-            </div>
+            </Link>
           </header>
           <div className="p-4 space-y-4">
             <button
