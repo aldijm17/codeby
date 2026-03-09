@@ -38,6 +38,7 @@ interface Contekan {
   user_id: string;
   language?: string;
   tags?: string[];
+  file_content?: string;
 }
 
 const Modal = ({
