@@ -22,6 +22,9 @@ import {
   LayoutDashboard,
   ChevronRight,
   Loader2,
+  Copy,
+  Check,
+  Tag,
 } from "lucide-react";
 import "../globals.css";
 
@@ -33,6 +36,8 @@ interface Contekan {
   deskripsi: string;
   user_display_name: string;
   user_id: string;
+  language?: string;
+  tags?: string[];
 }
 
 const Modal = ({
@@ -93,6 +98,8 @@ export default function DashboardPage() {
     deskripsi: string;
     file_content?: string;
     file?: File | null;
+    language: string;
+    tags: string;
   }
 
   const [formState, setFormState] = useState<FormState>({
@@ -100,9 +107,18 @@ export default function DashboardPage() {
     judul: "",
     isi: "",
     deskripsi: "",
+    language: "javascript",
+    tags: "",
   });
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
+
+  const handleCopy = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setIsCopied(true);
+    setTimeout(() => setIsCopied(false), 2000);
+  };
 
   const [modalState, setModalState] = useState({
     isOpen: false,
@@ -175,8 +191,13 @@ export default function DashboardPage() {
   };
 
   const filteredContekans = useMemo(() => {
-    let filtered = contekans.filter((c) =>
-      c.judul.toLowerCase().includes(searchQuery.toLowerCase()),
+    let filtered = contekans.filter(
+      (c) =>
+        c.judul.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (c.tags &&
+          c.tags.some((tag) =>
+            tag.toLowerCase().includes(searchQuery.toLowerCase()),
+          )),
     );
     if (filter === "mine" && user) {
       filtered = filtered.filter((c) => c.user_id === user.id);
@@ -197,13 +218,20 @@ export default function DashboardPage() {
       deskripsi: "",
       file: null,
       file_content: "",
+      language: "javascript",
+      tags: "",
     });
     setViewMode("add");
     if (window.innerWidth < 768) setIsSidebarOpen(false);
   };
 
   const handleEdit = (contekan: Contekan) => {
-    setFormState({ ...contekan, file: null }); // Don't carry over file object, but keep url
+    setFormState({
+      ...contekan,
+      file: null,
+      language: contekan.language || "javascript",
+      tags: contekan.tags ? contekan.tags.join(", ") : "",
+    }); // Don't carry over file object, but keep url
     setViewMode("edit");
   };
 
@@ -245,6 +273,11 @@ export default function DashboardPage() {
               user_display_name: user.user_metadata?.display_name || user.email,
               user_id: user.id,
               file_content: fileData,
+              language: formState.language,
+              tags: formState.tags
+                .split(",")
+                .map((t) => t.trim())
+                .filter(Boolean),
             },
           ])
           .select();
@@ -268,6 +301,11 @@ export default function DashboardPage() {
             isi: formState.isi,
             deskripsi: formState.deskripsi,
             file_content: fileData,
+            language: formState.language,
+            tags: formState.tags
+              .split(",")
+              .map((t) => t.trim())
+              .filter(Boolean),
           })
           .eq("id", formState.id)
           .select();
@@ -423,6 +461,18 @@ export default function DashboardPage() {
                     <p className="text-xs text-slate-500 truncate group-hover:text-slate-400 transition-colors">
                       {c.deskripsi || "No description"}
                     </p>
+                    {c.tags && c.tags.length > 0 && (
+                      <div className="flex gap-1 mt-1.5 overflow-hidden">
+                        {c.tags.slice(0, 3).map((tag, i) => (
+                          <span
+                            key={i}
+                            className="text-[10px] px-1.5 py-0.5 rounded-md bg-slate-800 text-slate-400 border border-slate-700 whitespace-nowrap"
+                          >
+                            #{tag}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   {currentItem?.id === c.id && (
                     <ChevronRight className="w-4 h-4 text-cyan-500/50" />
@@ -488,6 +538,19 @@ export default function DashboardPage() {
                             Created by {currentItem.user_display_name}
                           </span>
                         </div>
+                        {currentItem.tags && currentItem.tags.length > 0 && (
+                          <div className="flex flex-wrap items-center gap-1.5 mt-3">
+                            <Tag className="w-3.5 h-3.5 text-slate-500" />
+                            {currentItem.tags.map((tag, i) => (
+                              <span
+                                key={i}
+                                className="text-xs px-2 py-1 rounded-md bg-cyan-900/30 text-cyan-400 border border-cyan-800/50"
+                              >
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
+                        )}
                       </div>
 
                       {user &&
@@ -510,16 +573,36 @@ export default function DashboardPage() {
                         )}
                     </header>
 
-                    <div className="glass rounded-xl overflow-hidden shadow-2xl border border-slate-700/50">
-                      <div className="flex items-center gap-2 px-4 py-2 bg-slate-900/50 border-b border-slate-700/50">
+                    <div className="glass rounded-xl overflow-hidden shadow-2xl border border-slate-700/50 mt-6 bg-[#0B1120]">
+                      <div className="flex items-center justify-between px-4 py-2 bg-slate-900/80 border-b border-slate-700/50">
                         <div className="flex gap-1.5">
                           <div className="w-3 h-3 rounded-full bg-red-500/20 box-border border-red-500/50" />
                           <div className="w-3 h-3 rounded-full bg-yellow-500/20 box-border border-yellow-500/50" />
                           <div className="w-3 h-3 rounded-full bg-green-500/20 box-border border-green-500/50" />
                         </div>
+                        <div className="flex items-center gap-3">
+                          <span className="text-xs font-mono text-slate-500 uppercase">
+                            {currentItem.language || "javascript"}
+                          </span>
+                          <button
+                            onClick={() => handleCopy(currentItem.isi)}
+                            className="flex items-center gap-1.5 text-xs font-medium text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 px-2.5 py-1.5 rounded-md transition-all border border-slate-700 hover:border-slate-600"
+                          >
+                            {isCopied ? (
+                              <Check className="w-3.5 h-3.5 text-green-400" />
+                            ) : (
+                              <Copy className="w-3.5 h-3.5" />
+                            )}
+                            {isCopied ? (
+                              <span className="text-green-400">Copied!</span>
+                            ) : (
+                              "Copy"
+                            )}
+                          </button>
+                        </div>
                       </div>
                       <SyntaxHighlighter
-                        language="javascript"
+                        language={currentItem.language || "javascript"}
                         style={atomDark}
                         customStyle={{
                           margin: 0,
@@ -601,6 +684,60 @@ export default function DashboardPage() {
                         />
                       </div>
 
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium text-slate-400 ml-1">
+                            Language
+                          </label>
+                          <select
+                            value={formState.language}
+                            onChange={(e) =>
+                              setFormState({
+                                ...formState,
+                                language: e.target.value,
+                              })
+                            }
+                            className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-xl focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 focus:outline-none transition-all text-slate-200"
+                          >
+                            <option value="javascript">
+                              JavaScript / TypeScript
+                            </option>
+                            <option value="python">Python</option>
+                            <option value="html">HTML</option>
+                            <option value="css">CSS</option>
+                            <option value="php">PHP</option>
+                            <option value="java">Java</option>
+                            <option value="csharp">C#</option>
+                            <option value="cpp">C++</option>
+                            <option value="sql">SQL</option>
+                            <option value="bash">Bash / Shell</option>
+                            <option value="json">JSON</option>
+                            <option value="markdown">Markdown</option>
+                            <option value="dart">Dart</option>
+                            <option value="go">Go</option>
+                            <option value="ruby">Ruby</option>
+                            <option value="rust">Rust</option>
+                          </select>
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium text-slate-400 ml-1">
+                            Tags (comma separated)
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="e.g. react, hooks, ui"
+                            value={formState.tags}
+                            onChange={(e) =>
+                              setFormState({
+                                ...formState,
+                                tags: e.target.value,
+                              })
+                            }
+                            className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-xl focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 focus:outline-none transition-all text-slate-200 placeholder:text-slate-600"
+                          />
+                        </div>
+                      </div>
+
                       <div className="space-y-2">
                         <label className="text-sm font-medium text-slate-400 ml-1">
                           Attachment (Optional)
@@ -650,9 +787,6 @@ export default function DashboardPage() {
                             className="w-full h-96 p-4 bg-[#0B1120] border border-slate-700 rounded-xl focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 focus:outline-none transition-all text-cyan-50 font-mono text-sm leading-relaxed"
                             required
                           />
-                          <div className="absolute top-3 right-3 p-1.5 bg-slate-800 rounded opacity-50 text-xs font-mono text-slate-400 pointer-events-none">
-                            JS/TS
-                          </div>
                         </div>
                       </div>
 
