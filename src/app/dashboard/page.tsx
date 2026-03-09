@@ -235,15 +235,6 @@ export default function DashboardPage() {
     setViewMode("edit");
   };
 
-  const convertToBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = (error) => reject(error);
-    });
-  };
-
   const handleFormSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!user) return;
@@ -253,13 +244,30 @@ export default function DashboardPage() {
       let fileData = formState.file_content;
 
       if (formState.file) {
-        if (formState.file.size > 1024 * 1024) {
-          // 1MB limit
+        if (formState.file.size > 5 * 1024 * 1024) {
+          // 5MB limit
           throw new Error(
-            "File terlalu besar! Maksimal 1MB jika disimpan di database.",
+            "File terlalu besar! Maksimal 5MB untuk bucket penyimpanan.",
           );
         }
-        fileData = await convertToBase64(formState.file);
+
+        const fileExt = formState.file.name.split(".").pop();
+        const fileName = `${user.id}-${Math.random().toString(36).substring(2, 15)}-${Date.now()}.${fileExt}`;
+        const filePath = `${user.id}/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from("contekans-files")
+          .upload(filePath, formState.file);
+
+        if (uploadError) {
+          throw new Error(`Gagal mengunggah file: ${uploadError.message}`);
+        }
+
+        const {
+          data: { publicUrl },
+        } = supabase.storage.from("contekans-files").getPublicUrl(filePath);
+
+        fileData = publicUrl;
       }
 
       if (viewMode === "add") {
@@ -551,6 +559,20 @@ export default function DashboardPage() {
                             ))}
                           </div>
                         )}
+                        {currentItem.file_content &&
+                          currentItem.file_content.startsWith("http") && (
+                            <div className="mt-6 flex">
+                              <a
+                                href={currentItem.file_content}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-cyan-600/20 to-blue-600/20 hover:from-cyan-500/30 hover:to-blue-500/30 text-cyan-400 rounded-lg border border-cyan-500/30 transition-all font-medium text-sm shadow-sm"
+                              >
+                                <FileText className="w-4 h-4" />
+                                View / Download Attachment
+                              </a>
+                            </div>
+                          )}
                       </div>
 
                       {user &&
@@ -762,9 +784,11 @@ export default function DashboardPage() {
                                 "
                           />
                           {formState.file_content && !formState.file && (
-                            <div className="mt-2 text-xs text-green-400 flex items-center gap-1">
-                              <FileText className="w-3 h-3" /> Current file
-                              stored in DB
+                            <div className="mt-2 text-xs text-cyan-400 flex items-center gap-1">
+                              <FileText className="w-3 h-3" />
+                              {formState.file_content.startsWith("http")
+                                ? "Existing file attached"
+                                : "Current file stored in DB"}
                             </div>
                           )}
                         </div>
