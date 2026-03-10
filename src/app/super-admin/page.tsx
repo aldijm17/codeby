@@ -81,41 +81,71 @@ export default function SuperAdminPage() {
   };
 
   const fetchStats = async () => {
-    const [
-      { count: usersCount },
-      { count: snippetsCount },
-      { count: followsCount },
-    ] = await Promise.all([
-      supabase.from("profiles").select("*", { count: "exact", head: true }),
-      supabase.from("contekans").select("*", { count: "exact", head: true }),
-      supabase.from("follows").select("*", { count: "exact", head: true }),
-    ]);
+    try {
+      const [
+        { count: uCount, error: uErr },
+        { count: sCount, error: sErr },
+        { count: fCount, error: fErr },
+      ] = await Promise.all([
+        supabase.from("profiles").select("*", { count: "exact", head: true }),
+        supabase.from("contekans").select("*", { count: "exact", head: true }),
+        supabase.from("follows").select("*", { count: "exact", head: true }),
+      ]);
 
-    setStats({
-      totalUsers: usersCount || 0,
-      totalSnippets: snippetsCount || 0,
-      totalFollows: followsCount || 0,
-    });
+      if (uErr || sErr || fErr) {
+        console.error("Stats fetch error:", { uErr, sErr, fErr });
+      }
+
+      setStats({
+        totalUsers: uCount || 0,
+        totalSnippets: sCount || 0,
+        totalFollows: fCount || 0,
+      });
+    } catch (err) {
+      console.error("Stats exception:", err);
+    }
   };
 
   const fetchUsers = async () => {
     setIsDataLoading(true);
-    const { data } = await supabase
-      .from("profiles")
-      .select("*")
-      .order("created_at", { ascending: false });
-    setUsers(data || []);
-    setIsDataLoading(false);
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error("Error fetching users:", error);
+        alert("Gagal mengambil data user. Pastikan SQL sudah di-run.");
+      } else {
+        setUsers(data || []);
+      }
+    } catch (err) {
+      console.error("Users exception:", err);
+    } finally {
+      setIsDataLoading(false);
+    }
   };
 
   const fetchSnippets = async () => {
     setIsDataLoading(true);
-    const { data } = await supabase
-      .from("contekans")
-      .select("*, profiles(username, display_name)")
-      .order("created_at", { ascending: false });
-    setSnippets(data || []);
-    setIsDataLoading(false);
+    try {
+      const { data, error } = await supabase
+        .from("contekans")
+        .select("*, profiles(username, display_name)")
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error("Error fetching snippets:", error);
+        alert("Gagal mengambil data snippet.");
+      } else {
+        setSnippets(data || []);
+      }
+    } catch (err) {
+      console.error("Snippets exception:", err);
+    } finally {
+      setIsDataLoading(false);
+    }
   };
 
   useEffect(() => {
