@@ -133,7 +133,9 @@ export default function SuperAdminPage() {
 
       if (error) {
         console.error("Error fetching snippets:", error);
-        alert("Gagal mengambil data snippet.");
+        alert(
+          "Gagal mengambil data snippet. Pastikan sudah menambahkan foreign key (user_id) di Supabase Dashboard (lihat tutorial di script).",
+        );
       } else {
         setSnippets(data || []);
       }
