@@ -166,21 +166,38 @@ export default function DashboardPage() {
         `user_${user.id.slice(0, 5)}`;
       const displayName =
         user.user_metadata?.display_name || user.email?.split("@")[0] || "User";
-      const { data: profile } = await supabase
-        .from("profiles")
-        .upsert({
-          id: user.id,
-          username: username,
-          display_name: displayName,
-          avatar_url: user.user_metadata?.avatar_url || "",
-          email: user.email,
-        })
-        .select("role, is_approved")
-        .single();
 
-      if (profile) {
-        setUserRole(profile.role);
-        setIsApproved(profile.is_approved);
+      try {
+        const { data: profile, error: profileError } = await supabase
+          .from("profiles")
+          .upsert({
+            id: user.id,
+            username: username,
+            display_name: displayName,
+            avatar_url: user.user_metadata?.avatar_url || "",
+            email: user.email,
+          })
+          .select("role, is_approved")
+          .single();
+
+        if (profileError) {
+          console.error("Profile sync error:", profileError);
+          // Fallback: Just fetch role if upsert/select fails (e.g. missing is_approved column)
+          const { data: fallbackProfile } = await supabase
+            .from("profiles")
+            .select("role")
+            .eq("id", user.id)
+            .single();
+
+          if (fallbackProfile) {
+            setUserRole(fallbackProfile.role);
+          }
+        } else if (profile) {
+          setUserRole(profile.role);
+          setIsApproved(profile.is_approved);
+        }
+      } catch (err) {
+        console.error("Critical Profile Error:", err);
       }
 
       // Juga update metadata jika username belum ada agar konsisten
