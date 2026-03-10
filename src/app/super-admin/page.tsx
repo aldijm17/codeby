@@ -129,8 +129,7 @@ export default function SuperAdminPage() {
     try {
       const { data, error } = await supabase
         .from("contekans")
-        .select("*, profiles(username, display_name)")
-        .order("created_at", { ascending: false });
+        .select("*, profiles(username, display_name)");
 
       if (error) {
         console.error("Error fetching snippets:", error);
