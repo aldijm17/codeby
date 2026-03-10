@@ -27,21 +27,7 @@ export default function LoginPage() {
     if (error) {
       setErrorMessage(error.message);
     } else if (authData.user) {
-      // Check if user is approved
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("is_approved")
-        .eq("id", authData.user.id)
-        .single();
-
-      if (profile && profile.is_approved === false) {
-        await supabase.auth.signOut();
-        setErrorMessage(
-          "Akun Anda sedang menunggu persetujuan admin. Silakan cek email Anda nanti.",
-        );
-      } else {
-        router.push("/dashboard");
-      }
+      router.push("/dashboard");
     }
     setLoading(false);
   };

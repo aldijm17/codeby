@@ -145,6 +145,28 @@ export default function DashboardPage() {
 
   const router = useRouter();
 
+  const checkApprovalStatus = async () => {
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role, is_approved")
+        .eq("id", user.id)
+        .single();
+
+      if (profile) {
+        setUserRole(profile.role);
+        setIsApproved(profile.is_approved);
+      }
+    } catch (err) {
+      console.error("Manual refresh error:", err);
+    }
+  };
+
   useEffect(() => {
     const initialize = async () => {
       setIsLoading(true);
@@ -561,6 +583,14 @@ export default function DashboardPage() {
           </div>
 
           <button
+            onClick={checkApprovalStatus}
+            className="w-full py-4 px-6 bg-cyan-500 hover:bg-cyan-400 text-[#0f172a] font-bold rounded-xl shadow-lg shadow-cyan-500/20 transition-all flex items-center justify-center gap-2 mb-3"
+          >
+            <Loader2 className={`w-5 h-5 ${isLoading ? "animate-spin" : ""}`} />
+            Refresh Status
+          </button>
+
+          <button
             onClick={handleLogout}
             className="w-full py-4 px-6 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl transition-all border border-slate-700 flex items-center justify-center gap-2 group"
           >
@@ -643,15 +673,7 @@ export default function DashboardPage() {
               View Public Profile
             </Link>
 
-            {userRole === "super_admin" && (
-              <Link
-                href="/super-admin"
-                className="mt-2 p-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg border border-red-500/30 text-[10px] font-bold uppercase tracking-wider text-center transition-all block flex items-center justify-center gap-2"
-              >
-                <ShieldAlert className="w-3 h-3" />
-                Super Admin Panel
-              </Link>
-            )}
+            {/* Removed Super Admin button from here for cleaner head section */}
           </header>
           <div className="p-4 space-y-4">
             <button
@@ -808,13 +830,35 @@ export default function DashboardPage() {
             ))}
           </nav>
 
-          <div className="p-4 border-t border-slate-800">
+          <div className="p-4 border-t border-slate-800 space-y-2">
+            {userRole === "super_admin" && (
+              <Link
+                href="/super-admin"
+                className="flex items-center gap-3 p-3 bg-red-500/5 hover:bg-red-500/10 text-red-400 rounded-xl border border-red-500/20 transition-all group/admin mb-2"
+              >
+                <div className="p-2 bg-red-500/10 rounded-lg group-hover/admin:bg-red-500/20 transition-colors">
+                  <ShieldAlert className="w-4 h-4" />
+                </div>
+                <div className="flex-1 text-left">
+                  <p className="text-xs font-bold uppercase tracking-widest">
+                    Admin Panel
+                  </p>
+                  <p className="text-[10px] text-red-500/60 font-medium">
+                    Manage Users
+                  </p>
+                </div>
+                <ChevronRight className="w-4 h-4 opacity-0 group-hover/admin:opacity-100 group-hover/admin:translate-x-1 transition-all" />
+              </Link>
+            )}
+
             <button
               onClick={handleLogout}
-              className="flex items-center gap-2 w-full p-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
+              className="flex items-center gap-3 w-full p-3 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-all group"
             >
-              <LogOut className="w-5 h-5" />
-              <span className="font-medium">Sign Out</span>
+              <div className="p-2 bg-slate-800 rounded-lg group-hover:bg-red-500/10 transition-colors">
+                <LogOut className="w-4 h-4" />
+              </div>
+              <span className="font-bold text-sm">Sign Out</span>
             </button>
           </div>
         </motion.aside>
