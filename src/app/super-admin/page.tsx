@@ -109,10 +109,7 @@ export default function SuperAdminPage() {
   const fetchUsers = async () => {
     setIsDataLoading(true);
     try {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .order("created_at", { ascending: false });
+      const { data, error } = await supabase.from("profiles").select("*");
 
       if (error) {
         console.error("Error fetching users:", error);
