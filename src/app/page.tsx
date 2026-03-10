@@ -23,6 +23,7 @@ import {
   Loader2,
   Users,
   UserPlus,
+  ShieldAlert,
 } from "lucide-react";
 import { Toaster, toast } from "sonner";
 import "./globals.css";
@@ -68,6 +69,7 @@ export default function Home() {
 
   // User Session State
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
 
   // Add Snippet State
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -103,6 +105,15 @@ export default function Home() {
       } = await supabase.auth.getUser();
       if (user) {
         setCurrentUser(user);
+        // Fetch role
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", user.id)
+          .single();
+        if (profile) {
+          setCurrentUserRole(profile.role);
+        }
       }
     };
     fetchUser();
@@ -483,6 +494,15 @@ export default function Home() {
                           >
                             Dashboard
                           </Link>
+                          {currentUserRole === "super_admin" && (
+                            <Link
+                              href="/super-admin"
+                              className="flex items-center gap-2 px-4 py-3 text-sm text-red-400 hover:bg-red-500/10 transition-colors border-t border-slate-800"
+                            >
+                              <ShieldAlert className="w-4 h-4" />
+                              Super Admin
+                            </Link>
+                          )}
                         </>
                       ) : (
                         <>
