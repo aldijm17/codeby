@@ -28,6 +28,7 @@ import {
   Users,
   UserPlus,
   ShieldAlert,
+  Clock,
 } from "lucide-react";
 import Link from "next/link";
 import "../globals.css";
@@ -140,6 +141,7 @@ export default function DashboardPage() {
     isConfirmation: false,
   });
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [isApproved, setIsApproved] = useState<boolean | null>(null);
 
   const router = useRouter();
 
@@ -164,7 +166,6 @@ export default function DashboardPage() {
         `user_${user.id.slice(0, 5)}`;
       const displayName =
         user.user_metadata?.display_name || user.email?.split("@")[0] || "User";
-
       const { data: profile } = await supabase
         .from("profiles")
         .upsert({
@@ -173,11 +174,12 @@ export default function DashboardPage() {
           display_name: displayName,
           avatar_url: user.user_metadata?.avatar_url || "",
         })
-        .select("role")
+        .select("role, is_approved")
         .single();
 
       if (profile) {
         setUserRole(profile.role);
+        setIsApproved(profile.is_approved);
       }
 
       // Juga update metadata jika username belum ada agar konsisten
@@ -485,6 +487,72 @@ export default function DashboardPage() {
           transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
         >
           <Loader2 className="w-12 h-12 text-cyan-400" />
+        </motion.div>
+      </div>
+    );
+  }
+
+  if (isApproved === false) {
+    return (
+      <div className="min-h-screen bg-[#0f172a] flex items-center justify-center p-6 relative overflow-hidden">
+        {/* Decorative Background */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-cyan-500/10 blur-[120px] rounded-full pointer-events-none" />
+
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="max-w-md w-full glass p-10 rounded-3xl shadow-2xl relative z-10 text-center border border-slate-700/50"
+        >
+          <div className="w-20 h-20 bg-cyan-500/10 rounded-2xl flex items-center justify-center mx-auto mb-8 relative">
+            <Clock className="w-10 h-10 text-cyan-400 animate-pulse" />
+            <div className="absolute -top-2 -right-2 w-6 h-6 bg-cyan-500 rounded-full flex items-center justify-center border-4 border-[#0f172a]">
+              <ShieldAlert className="w-3 h-3 text-white" />
+            </div>
+          </div>
+
+          <h1 className="text-3xl font-extrabold text-white mb-4 tracking-tight">
+            Account Pending
+          </h1>
+          <p className="text-slate-400 leading-relaxed mb-8">
+            Welcome to <span className="text-cyan-400 font-bold">CodeBy</span>!
+            Your account is currently in the verification queue. A Super Admin
+            will review your registration shortly.
+          </p>
+
+          <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 mb-8 text-left">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-2 h-2 bg-cyan-500 rounded-full animate-ping" />
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">
+                What's Next?
+              </span>
+            </div>
+            <ul className="space-y-3">
+              <li className="flex items-start gap-3 text-sm text-slate-300">
+                <div className="w-5 h-5 rounded-full bg-cyan-500/10 flex items-center justify-center shrink-0 mt-0.5">
+                  <span className="text-[10px] font-bold text-cyan-400">1</span>
+                </div>
+                Admin verifies your profile credentials.
+              </li>
+              <li className="flex items-start gap-3 text-sm text-slate-300">
+                <div className="w-5 h-5 rounded-full bg-cyan-500/10 flex items-center justify-center shrink-0 mt-0.5">
+                  <span className="text-[10px] font-bold text-cyan-400">2</span>
+                </div>
+                You'll receive full access to all features.
+              </li>
+            </ul>
+          </div>
+
+          <button
+            onClick={handleLogout}
+            className="w-full py-4 px-6 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl transition-all border border-slate-700 flex items-center justify-center gap-2 group"
+          >
+            <LogOut className="w-5 h-5 group-hover:text-red-400 transition-colors" />
+            Sign Out
+          </button>
+
+          <p className="text-[10px] text-slate-500 mt-8 uppercase tracking-[0.2em] font-medium">
+            Secured by CodeBy Sentinel
+          </p>
         </motion.div>
       </div>
     );

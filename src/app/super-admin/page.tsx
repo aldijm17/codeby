@@ -18,6 +18,9 @@ import {
   ChevronRight,
   ExternalLink,
   Hash,
+  CheckCircle2,
+  XCircle,
+  Clock,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
@@ -26,13 +29,14 @@ interface DashboardStats {
   totalUsers: number;
   totalSnippets: number;
   totalFollows: number;
+  pendingApprovals: number;
 }
 
 export default function SuperAdminPage() {
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<
-    "users" | "snippets" | "dashboard"
+    "users" | "snippets" | "dashboard" | "requests"
   >("dashboard");
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -40,10 +44,12 @@ export default function SuperAdminPage() {
     totalUsers: 0,
     totalSnippets: 0,
     totalFollows: 0,
+    pendingApprovals: 0,
   });
 
   const [users, setUsers] = useState<any[]>([]);
   const [snippets, setSnippets] = useState<any[]>([]);
+  const [requests, setRequests] = useState<any[]>([]);
   const [isDataLoading, setIsDataLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
@@ -86,20 +92,26 @@ export default function SuperAdminPage() {
         { count: uCount, error: uErr },
         { count: sCount, error: sErr },
         { count: fCount, error: fErr },
+        { count: pCount, error: pErr },
       ] = await Promise.all([
         supabase.from("profiles").select("*", { count: "exact", head: true }),
         supabase.from("contekans").select("*", { count: "exact", head: true }),
         supabase.from("follows").select("*", { count: "exact", head: true }),
+        supabase
+          .from("profiles")
+          .select("*", { count: "exact", head: true })
+          .eq("is_approved", false),
       ]);
 
-      if (uErr || sErr || fErr) {
-        console.error("Stats fetch error:", { uErr, sErr, fErr });
+      if (uErr || sErr || fErr || pErr) {
+        console.error("Stats fetch error:", { uErr, sErr, fErr, pErr });
       }
 
       setStats({
         totalUsers: uCount || 0,
         totalSnippets: sCount || 0,
         totalFollows: fCount || 0,
+        pendingApprovals: pCount || 0,
       });
     } catch (err) {
       console.error("Stats exception:", err);
@@ -109,7 +121,10 @@ export default function SuperAdminPage() {
   const fetchUsers = async () => {
     setIsDataLoading(true);
     try {
-      const { data, error } = await supabase.from("profiles").select("*");
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("is_approved", true);
 
       if (error) {
         console.error("Error fetching users:", error);
@@ -119,6 +134,28 @@ export default function SuperAdminPage() {
       }
     } catch (err) {
       console.error("Users exception:", err);
+    } finally {
+      setIsDataLoading(false);
+    }
+  };
+
+  const fetchRequests = async () => {
+    setIsDataLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("is_approved", false)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error("Error fetching requests:", error);
+        alert("Gagal mengambil data request.");
+      } else {
+        setRequests(data || []);
+      }
+    } catch (err) {
+      console.error("Requests exception:", err);
     } finally {
       setIsDataLoading(false);
     }
@@ -150,6 +187,7 @@ export default function SuperAdminPage() {
     if (activeTab === "users") fetchUsers();
     if (activeTab === "snippets") fetchSnippets();
     if (activeTab === "dashboard") fetchStats();
+    if (activeTab === "requests") fetchRequests();
   }, [activeTab]);
 
   const handleDeleteUser = async (userId: string, username: string) => {
@@ -206,6 +244,30 @@ export default function SuperAdminPage() {
     }
   };
 
+  const handleApproveUser = async (userId: string) => {
+    setActionLoading(userId);
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ is_approved: true })
+        .eq("id", userId);
+
+      if (error) throw error;
+
+      setRequests(requests.filter((r) => r.id !== userId));
+      setStats((prev) => ({
+        ...prev,
+        totalUsers: prev.totalUsers + 1,
+        pendingApprovals: prev.pendingApprovals - 1,
+      }));
+      alert("User approved!");
+    } catch (err: any) {
+      alert("Error: " + err.message);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   if (isLoading || isAdmin === null) {
     return (
       <div className="min-h-screen bg-[#0f172a] flex items-center justify-center">
@@ -249,6 +311,23 @@ export default function SuperAdminPage() {
           >
             <Code2 className="w-5 h-5" />
             <span className="font-semibold">Snippets</span>
+          </button>
+          <button
+            onClick={() => setActiveTab("requests")}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === "requests" ? "bg-slate-800 text-white shadow-lg border border-slate-700" : "text-slate-400 hover:bg-slate-800/50"}`}
+          >
+            <div className="relative">
+              <Clock className="w-5 h-5" />
+              {stats.pendingApprovals > 0 && (
+                <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full border border-slate-900" />
+              )}
+            </div>
+            <span className="font-semibold text-left flex-1">Requests</span>
+            {stats.pendingApprovals > 0 && (
+              <span className="text-[10px] bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded-full font-bold">
+                {stats.pendingApprovals}
+              </span>
+            )}
           </button>
         </nav>
 
@@ -605,6 +684,123 @@ export default function SuperAdminPage() {
                               </td>
                             </tr>
                           ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </motion.div>
+            )}
+            {activeTab === "requests" && (
+              <motion.div
+                key="requests"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="space-y-6"
+              >
+                <div className="bg-slate-900/50 border border-slate-800 rounded-3xl overflow-hidden">
+                  <table className="w-full text-left">
+                    <thead>
+                      <tr className="border-b border-slate-800 bg-slate-800/30">
+                        <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-slate-500">
+                          Pending User
+                        </th>
+                        <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-slate-500">
+                          Email / ID
+                        </th>
+                        <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-slate-500">
+                          Joined
+                        </th>
+                        <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-slate-500 text-right">
+                          Actions
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800">
+                      {isDataLoading ? (
+                        <tr>
+                          <td
+                            colSpan={4}
+                            className="py-20 text-center text-slate-500"
+                          >
+                            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2" />
+                            Loading requests...
+                          </td>
+                        </tr>
+                      ) : requests.length === 0 ? (
+                        <tr>
+                          <td
+                            colSpan={4}
+                            className="py-20 text-center text-slate-500 italic"
+                          >
+                            No pending approval requests.
+                          </td>
+                        </tr>
+                      ) : (
+                        requests.map((r) => (
+                          <tr
+                            key={r.id}
+                            className="hover:bg-slate-800/30 transition-colors"
+                          >
+                            <td className="px-6 py-4">
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center">
+                                  <Users className="w-5 h-5 text-slate-500" />
+                                </div>
+                                <div>
+                                  <p className="font-bold text-white">
+                                    {r.display_name}
+                                  </p>
+                                  <p className="text-xs text-slate-500">
+                                    @{r.username}
+                                  </p>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <p className="text-sm text-slate-300">
+                                {r.email || "N/A"}
+                              </p>
+                              <p className="text-[10px] font-mono text-slate-600 mt-1">
+                                {r.id}
+                              </p>
+                            </td>
+                            <td className="px-6 py-4">
+                              <p className="text-xs text-slate-400">
+                                {new Date(r.created_at).toLocaleDateString()}
+                              </p>
+                            </td>
+                            <td className="px-6 py-4 text-right">
+                              <div className="flex justify-end gap-2">
+                                <button
+                                  onClick={() => handleApproveUser(r.id)}
+                                  disabled={actionLoading === r.id}
+                                  className="p-2 bg-green-500/10 hover:bg-green-500 text-green-400 hover:text-white rounded-lg transition-all"
+                                  title="Approve User"
+                                >
+                                  {actionLoading === r.id ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                  ) : (
+                                    <CheckCircle2 className="w-4 h-4" />
+                                  )}
+                                </button>
+                                <button
+                                  onClick={() =>
+                                    handleDeleteUser(r.id, r.username)
+                                  }
+                                  disabled={actionLoading === r.id}
+                                  className="p-2 bg-red-500/10 hover:bg-red-500 text-red-400 hover:text-white rounded-lg transition-all"
+                                  title="Reject & Delete"
+                                >
+                                  {actionLoading === r.id ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                  ) : (
+                                    <XCircle className="w-4 h-4" />
+                                  )}
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))
                       )}
                     </tbody>
                   </table>
