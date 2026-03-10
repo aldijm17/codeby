@@ -27,6 +27,7 @@ import {
   Tag,
   Users,
   UserPlus,
+  ShieldAlert,
 } from "lucide-react";
 import Link from "next/link";
 import "../globals.css";
@@ -131,7 +132,6 @@ export default function DashboardPage() {
     setIsCopied(true);
     setTimeout(() => setIsCopied(false), 2000);
   };
-
   const [modalState, setModalState] = useState({
     isOpen: false,
     title: "",
@@ -139,6 +139,7 @@ export default function DashboardPage() {
     onConfirm: () => {},
     isConfirmation: false,
   });
+  const [userRole, setUserRole] = useState<string | null>(null);
 
   const router = useRouter();
 
@@ -164,12 +165,20 @@ export default function DashboardPage() {
       const displayName =
         user.user_metadata?.display_name || user.email?.split("@")[0] || "User";
 
-      await supabase.from("profiles").upsert({
-        id: user.id,
-        username: username,
-        display_name: displayName,
-        avatar_url: user.user_metadata?.avatar_url || "",
-      });
+      const { data: profile } = await supabase
+        .from("profiles")
+        .upsert({
+          id: user.id,
+          username: username,
+          display_name: displayName,
+          avatar_url: user.user_metadata?.avatar_url || "",
+        })
+        .select("role")
+        .single();
+
+      if (profile) {
+        setUserRole(profile.role);
+      }
 
       // Juga update metadata jika username belum ada agar konsisten
       if (!user.user_metadata?.username) {
@@ -547,6 +556,16 @@ export default function DashboardPage() {
             >
               View Public Profile
             </Link>
+
+            {userRole === "super_admin" && (
+              <Link
+                href="/super-admin"
+                className="mt-2 p-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg border border-red-500/30 text-[10px] font-bold uppercase tracking-wider text-center transition-all block flex items-center justify-center gap-2"
+              >
+                <ShieldAlert className="w-3 h-3" />
+                Super Admin Panel
+              </Link>
+            )}
           </header>
           <div className="p-4 space-y-4">
             <button
