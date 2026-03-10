@@ -19,15 +19,29 @@ export default function LoginPage() {
     setLoading(true);
     setErrorMessage(null);
 
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data: authData, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
     if (error) {
       setErrorMessage(error.message);
-    } else {
-      router.push("/dashboard");
+    } else if (authData.user) {
+      // Check if user is approved
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("is_approved")
+        .eq("id", authData.user.id)
+        .single();
+
+      if (profile && profile.is_approved === false) {
+        await supabase.auth.signOut();
+        setErrorMessage(
+          "Akun Anda sedang menunggu persetujuan admin. Silakan cek email Anda nanti.",
+        );
+      } else {
+        router.push("/dashboard");
+      }
     }
     setLoading(false);
   };

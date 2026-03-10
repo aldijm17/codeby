@@ -17,6 +17,25 @@ export default function ResetPasswordPage() {
     setMessage("");
     setError("");
 
+    // Check if user is approved first
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("is_approved")
+      .eq("email", email)
+      .single();
+
+    if (!profile) {
+      setError("Email tidak terdaftar atau akun belum aktif.");
+      setLoading(false);
+      return;
+    }
+
+    if (profile.is_approved === false) {
+      setError("Permintaan ditolak. Akun Anda masih dalam status pending.");
+      setLoading(false);
+      return;
+    }
+
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/auth/callback?next=/update-password`,
     });
@@ -24,7 +43,7 @@ export default function ResetPasswordPage() {
     if (error) {
       setError(error.message);
     } else {
-      setMessage("Reset link sent to your email. Please check your inbox.");
+      setMessage("Link reset password telah dikirim ke email Anda.");
     }
     setLoading(false);
   };
@@ -113,7 +132,10 @@ export default function ResetPasswordPage() {
         </form>
 
         <div className="mt-8 text-center">
-          <Link href="/login" className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors">
+          <Link
+            href="/login"
+            className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors"
+          >
             <ArrowLeft className="w-4 h-4" /> Back to Login
           </Link>
         </div>
