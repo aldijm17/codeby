@@ -146,7 +146,7 @@ export default function SuperAdminPage() {
         .from("profiles")
         .select("*")
         .eq("is_approved", false)
-        .order("created_at", { ascending: false });
+        .order("updated_at", { ascending: false });
 
       if (error) {
         console.error("Error fetching requests:", error);
