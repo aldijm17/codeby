@@ -21,6 +21,8 @@ import {
   FileText,
   Plus,
   Loader2,
+  Users,
+  UserPlus,
 } from "lucide-react";
 import { Toaster, toast } from "sonner";
 import "./globals.css";
@@ -32,7 +34,12 @@ interface Contekan {
   created_at: string;
   deskripsi: string;
   user_display_name: string;
+  user_id: string;
   file_content?: string;
+  profiles?: {
+    username: string;
+    display_name: string;
+  };
 }
 
 const LoadingSpinner = () => (
@@ -76,11 +83,13 @@ export default function Home() {
     const fetchContekans = async () => {
       setIsLoading(true);
       try {
-        const { data, error } = await supabase.from("contekans").select("*");
+        const { data, error } = await supabase
+          .from("contekans")
+          .select("*, profiles(username, display_name)");
         if (error) throw error;
-        setContekans(data as Contekan[]);
-      } catch (err) {
-        console.error("Error fetching: ", err);
+        setContekans(data as any[]);
+      } catch (err: any) {
+        console.error("Error fetching contekans: ", err.message || err);
       } finally {
         setIsLoading(false);
       }
@@ -113,6 +122,65 @@ export default function Home() {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [dropdownRef]);
+
+  // Social States
+  const [foundUsers, setFoundUsers] = useState<any[]>([]);
+  const [isSearchingUsers, setIsSearchingUsers] = useState(false);
+
+  useEffect(() => {
+    const searchUsers = async () => {
+      const trimmedQuery = searchQuery.trim();
+      const cleanQuery = trimmedQuery.startsWith("@")
+        ? trimmedQuery.slice(1)
+        : trimmedQuery;
+      console.log("Search input:", searchQuery);
+      console.log("Cleaned query:", cleanQuery);
+
+      if (cleanQuery.length < 2) {
+        setFoundUsers([]);
+        return;
+      }
+      setIsSearchingUsers(true);
+      try {
+        console.log("Searching for user with query:", cleanQuery);
+        const { data, error } = await supabase
+          .from("profiles")
+          .select(
+            `
+            *,
+            contekans:contekans(count),
+            followers:follows!follows_following_id_fkey(count),
+            following:follows!follows_follower_id_fkey(count)
+          `,
+          )
+          .or(
+            `username.ilike.%${cleanQuery}%,display_name.ilike.%${cleanQuery}%`,
+          )
+          .limit(5);
+
+        if (error) throw error;
+        console.log("Search results (with stats):", data);
+        setFoundUsers(data || []);
+      } catch (err) {
+        console.warn("Retrying basic search due to error:", err);
+        // Fallback to basic search if counts fail due to relationship issues
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("*")
+          .or(
+            `username.ilike.%${cleanQuery}%,display_name.ilike.%${cleanQuery}%`,
+          )
+          .limit(5);
+        console.log("Basic search results:", data, error);
+        setFoundUsers(data || []);
+      } finally {
+        setIsSearchingUsers(false);
+      }
+    };
+
+    const timer = setTimeout(searchUsers, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   const sortedAndFilteredContekans = useMemo(() => {
     return contekans
@@ -261,11 +329,88 @@ export default function Home() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5 group-focus-within:text-cyan-400 transition-colors" />
               <input
                 type="text"
-                placeholder="Cari snippet..."
+                placeholder="Cari snippet atau developer..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-900/50 border border-slate-700/50 text-slate-100 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 focus:outline-none transition-all placeholder:text-slate-500 focus:bg-slate-900/80"
               />
+
+              {/* User Search Results Dropdown */}
+              <AnimatePresence>
+                {searchQuery.length >= 2 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 10 }}
+                    className="absolute left-0 right-0 mt-2 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl overflow-hidden z-30"
+                  >
+                    <div className="p-2 border-b border-slate-800 bg-slate-800/30">
+                      <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-2">
+                        Developers Found
+                      </p>
+                    </div>
+                    {foundUsers.length > 0 ? (
+                      foundUsers.map((u) => (
+                        <Link
+                          key={u.id}
+                          href={`/u/${u.username}`}
+                          className="flex items-center gap-3 p-3 hover:bg-slate-800 transition-colors border-b last:border-0 border-slate-800 group"
+                        >
+                          <div className="w-10 h-10 rounded-full overflow-hidden bg-slate-800 border border-slate-700 shrink-0">
+                            {u.avatar_url ? (
+                              <img
+                                src={u.avatar_url}
+                                alt={u.username}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-slate-500">
+                                <Users className="w-5 h-5" />
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-bold text-slate-100 truncate group-hover:text-cyan-400 transition-colors">
+                              {u.display_name}
+                            </p>
+                            <p className="text-xs text-slate-500 truncate mb-1">
+                              @{u.username}
+                            </p>
+                            {/* User Stats in Search */}
+                            <div className="flex items-center gap-3">
+                              <div className="flex items-center gap-1 text-[10px] text-slate-500">
+                                <Code2 className="w-3 h-3" />
+                                <span className="font-medium text-slate-400">
+                                  {u.contekans?.[0]?.count || 0}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-1 text-[10px] text-slate-500">
+                                <Users className="w-3 h-3" />
+                                <span className="font-medium text-slate-400">
+                                  {u.followers?.[0]?.count || 0}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-1 text-[10px] text-slate-500">
+                                <UserPlus className="w-3 h-3" />
+                                <span className="font-medium text-slate-400">
+                                  {u.following?.[0]?.count || 0}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                          <ChevronRight className="w-4 h-4 text-slate-600 group-hover:text-cyan-400 group-hover:translate-x-1 transition-all" />
+                        </Link>
+                      ))
+                    ) : searchQuery.length >= 2 && !isSearchingUsers ? (
+                      <div className="p-4 text-center">
+                        <p className="text-xs text-slate-500">
+                          No developers found for "{searchQuery}"
+                        </p>
+                      </div>
+                    ) : null}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
             <div className="flex items-center gap-3 w-full md:w-auto">
@@ -394,6 +539,18 @@ export default function Home() {
                       <p className="text-sm text-slate-400 line-clamp-2 leading-relaxed pl-1">
                         {contekan.deskripsi || "Tidak ada deskripsi."}
                       </p>
+                      {contekan.profiles?.username && (
+                        <div className="mt-3 flex items-center gap-2">
+                          <Link
+                            href={`/u/${contekan.profiles.username}`}
+                            onClick={(e) => e.stopPropagation()}
+                            className="text-xs text-cyan-400 hover:text-cyan-300 transition-colors flex items-center gap-1 group/user"
+                          >
+                            <User className="w-3 h-3" />
+                            <span>@{contekan.profiles.username}</span>
+                          </Link>
+                        </div>
+                      )}
                     </div>
                     <div className="p-2 rounded-full bg-slate-800/30 text-slate-600 group-hover:text-cyan-400 group-hover:bg-cyan-500/10 transition-all duration-300 group-hover:translate-x-1">
                       <ChevronRight className="w-5 h-5" />
@@ -462,11 +619,21 @@ export default function Home() {
                           selectedContekan.created_at,
                         ).toLocaleDateString("id-ID", { dateStyle: "long" })}
                       </span>
-                      {selectedContekan.user_display_name && (
-                        <span className="flex items-center gap-1">
-                          <User className="w-3 h-3" />{" "}
-                          {selectedContekan.user_display_name}
-                        </span>
+                      {selectedContekan.profiles?.username ? (
+                        <Link
+                          href={`/u/${selectedContekan.profiles.username}`}
+                          className="flex items-center gap-1 hover:text-cyan-400 transition-colors"
+                        >
+                          <User className="w-3 h-3" /> @
+                          {selectedContekan.profiles.username}
+                        </Link>
+                      ) : (
+                        selectedContekan.user_display_name && (
+                          <span className="flex items-center gap-1">
+                            <User className="w-3 h-3" />{" "}
+                            {selectedContekan.user_display_name}
+                          </span>
+                        )
                       )}
                     </motion.div>
                   </div>

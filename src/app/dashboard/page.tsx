@@ -25,6 +25,8 @@ import {
   Copy,
   Check,
   Tag,
+  Users,
+  UserPlus,
 } from "lucide-react";
 import Link from "next/link";
 import "../globals.css";
@@ -58,19 +60,19 @@ const Modal = ({
   return (
     <AnimatePresence>
       {isOpen && (
-        <>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 transition-opacity"
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
           />
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl p-6 w-full max-w-md z-50"
+            className="relative bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl p-6 w-full max-w-md z-50"
           >
             <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
               {title}
@@ -78,7 +80,7 @@ const Modal = ({
             <div className="text-slate-300">{children}</div>
             <div className="mt-8 flex justify-end gap-3">{footer}</div>
           </motion.div>
-        </>
+        </div>
       )}
     </AnimatePresence>
   );
@@ -112,9 +114,17 @@ export default function DashboardPage() {
     language: "javascript",
     tags: "",
   });
+  const [socialStats, setSocialStats] = useState({
+    followers: 0,
+    following: 0,
+  });
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
+
+  // Social Search States
+  const [foundUsers, setFoundUsers] = useState<any[]>([]);
+  const [isSearchingUsers, setIsSearchingUsers] = useState(false);
 
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -146,6 +156,44 @@ export default function DashboardPage() {
       }
       setUser(user);
 
+      // Sinkronisasi/Pastikan Profil ada di tabel public.profiles
+      const username =
+        user.user_metadata?.username ||
+        user.email?.split("@")[0] ||
+        `user_${user.id.slice(0, 5)}`;
+      const displayName =
+        user.user_metadata?.display_name || user.email?.split("@")[0] || "User";
+
+      await supabase.from("profiles").upsert({
+        id: user.id,
+        username: username,
+        display_name: displayName,
+        avatar_url: user.user_metadata?.avatar_url || "",
+      });
+
+      // Juga update metadata jika username belum ada agar konsisten
+      if (!user.user_metadata?.username) {
+        await supabase.auth.updateUser({
+          data: { username, display_name: displayName },
+        });
+      }
+
+      // Social Stats
+      const { count: followers } = await supabase
+        .from("follows")
+        .select("*", { count: "exact", head: true })
+        .eq("following_id", user.id);
+
+      const { count: following } = await supabase
+        .from("follows")
+        .select("*", { count: "exact", head: true })
+        .eq("follower_id", user.id);
+
+      setSocialStats({
+        followers: followers || 0,
+        following: following || 0,
+      });
+
       const { data, error } = await supabase
         .from("contekans")
         .select("*")
@@ -162,6 +210,58 @@ export default function DashboardPage() {
     };
     initialize();
   }, [router]);
+
+  // Social Search Effect
+  useEffect(() => {
+    const searchUsers = async () => {
+      const trimmedQuery = searchQuery.trim();
+      const cleanQuery = trimmedQuery.startsWith("@")
+        ? trimmedQuery.slice(1)
+        : trimmedQuery;
+      if (cleanQuery.length < 2) {
+        setFoundUsers([]);
+        return;
+      }
+      setIsSearchingUsers(true);
+      try {
+        console.log("Dashboard Searching for user:", cleanQuery);
+        const { data, error } = await supabase
+          .from("profiles")
+          .select(
+            `
+            *,
+            contekans:contekans(count),
+            followers:follows!follows_following_id_fkey(count),
+            following:follows!follows_follower_id_fkey(count)
+          `,
+          )
+          .or(
+            `username.ilike.%${cleanQuery}%,display_name.ilike.%${cleanQuery}%`,
+          )
+          .limit(5);
+
+        if (error) throw error;
+        console.log("Dashboard Search results:", data);
+        setFoundUsers(data || []);
+      } catch (err) {
+        console.warn("Dashboard Retrying basic search due to error:", err);
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("*")
+          .or(
+            `username.ilike.%${cleanQuery}%,display_name.ilike.%${cleanQuery}%`,
+          )
+          .limit(5);
+        console.log("Dashboard Basic search results:", data, error);
+        setFoundUsers(data || []);
+      } finally {
+        setIsSearchingUsers(false);
+      }
+    };
+
+    const timer = setTimeout(searchUsers, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   const closeModal = () => setModalState({ ...modalState, isOpen: false });
 
@@ -426,7 +526,26 @@ export default function DashboardPage() {
                 <p className="text-xs text-slate-500 truncate group-hover:text-slate-400 transition-colors">
                   @{user?.user_metadata?.username || "username"}
                 </p>
+                <div className="flex items-center gap-3 mt-1.5 pointer-events-none">
+                  <div className="flex items-center gap-1 text-[10px] text-slate-500">
+                    <span className="font-bold text-slate-300">
+                      {socialStats.followers}
+                    </span>{" "}
+                    Followers
+                  </div>
+                  <div className="flex items-center gap-1 text-[10px] text-slate-500">
+                    <span className="font-bold text-slate-300">
+                      {socialStats.following}
+                    </span>{" "}
+                  </div>
+                </div>
               </div>
+            </Link>
+            <Link
+              href={`/u/${user?.user_metadata?.username}`}
+              className="mt-4 p-2 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 rounded-lg border border-cyan-500/20 text-[10px] font-bold uppercase tracking-wider text-center transition-all block"
+            >
+              View Public Profile
             </Link>
           </header>
           <div className="p-4 space-y-4">
@@ -458,13 +577,76 @@ export default function DashboardPage() {
             <div className="relative group">
               <input
                 type="text"
-                placeholder="Search snippets..."
+                placeholder="Search snippets or profiles"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-4 py-2.5 bg-slate-900/50 border border-slate-700 rounded-xl text-slate-300 placeholder:text-slate-500 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 focus:outline-none transition-all group-hover:border-slate-600"
               />
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-focus-within:text-cyan-400 transition-colors" />
             </div>
+
+            {/* User Search Results in Dashboard Sidebar */}
+            {searchQuery.length >= 2 && (
+              <div className="space-y-2 mt-2">
+                <div className="flex items-center gap-2 px-1 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                  <Users className="w-3 h-3" />
+                  <span>Developers</span>
+                </div>
+                <div className="space-y-1">
+                  {foundUsers.length > 0 ? (
+                    foundUsers.map((u) => (
+                      <Link
+                        key={u.id}
+                        href={`/u/${u.username}`}
+                        className="flex items-center gap-3 p-2 rounded-xl bg-slate-800/40 hover:bg-slate-800 border border-slate-700/50 hover:border-cyan-500/30 transition-all group"
+                      >
+                        <div className="w-8 h-8 rounded-full overflow-hidden border border-slate-700 bg-slate-900 shrink-0">
+                          {u.avatar_url ? (
+                            <img
+                              src={u.avatar_url}
+                              alt={u.display_name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-slate-500">
+                              <UserIcon className="w-4 h-4" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <p className="text-xs font-bold text-slate-200 truncate group-hover:text-cyan-400 transition-colors">
+                              {u.display_name}
+                            </p>
+                            <ChevronRight className="w-3 h-3 text-slate-600 group-hover:text-cyan-400 transition-all" />
+                          </div>
+                          <div className="flex items-center gap-2 mt-1">
+                            <div className="flex items-center gap-1 text-[9px] text-slate-500">
+                              <Code2 className="w-2.5 h-2.5" />
+                              <span>{u.contekans?.[0]?.count || 0}</span>
+                            </div>
+                            <div className="flex items-center gap-1 text-[9px] text-slate-500">
+                              <Users className="w-2.5 h-2.5" />
+                              <span>{u.followers?.[0]?.count || 0}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </Link>
+                    ))
+                  ) : !isSearchingUsers ? (
+                    <div className="p-2 text-center bg-slate-800/20 rounded-lg border border-dashed border-slate-700/50">
+                      <p className="text-[10px] text-slate-500 italic">
+                        No developers found
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="p-2 text-center">
+                      <Loader2 className="w-4 h-4 text-cyan-500 animate-spin mx-auto" />
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           <nav className="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar">

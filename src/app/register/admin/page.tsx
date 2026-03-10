@@ -26,11 +26,16 @@ export default function RegisterPage() {
     setSuccessMessage(null);
 
     try {
-      const { email, password, displayName } = formData;
+      const { email, password, displayName, username } = formData;
       const { error } = await supabase.auth.signUp({
         email,
         password,
-        options: { data: { display_name: displayName } },
+        options: {
+          data: {
+            display_name: displayName,
+            username: username,
+          },
+        },
       });
 
       if (error) {
@@ -129,6 +134,30 @@ export default function RegisterPage() {
             {errors.displayName && (
               <p className="text-red-400 text-xs mt-1 ml-1">
                 {String(errors.displayName.message)}
+              </p>
+            )}
+          </div>
+
+          <div className="relative group">
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-cyan-400 transition-colors font-medium">
+              @
+            </div>
+            <input
+              type="text"
+              {...register("username", {
+                required: "Username is required",
+                pattern: {
+                  value: /^[a-zA-Z0-9_]+$/,
+                  message:
+                    "Username can only contain letters, numbers, and underscores",
+                },
+              })}
+              className="w-full pl-12 pr-4 py-3.5 bg-slate-900/50 border border-slate-700 rounded-xl text-slate-200 placeholder:text-slate-500 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 focus:outline-none transition-all"
+              placeholder="username"
+            />
+            {errors.username && (
+              <p className="text-red-400 text-xs mt-1 ml-1">
+                {String(errors.username.message)}
               </p>
             )}
           </div>

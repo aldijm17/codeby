@@ -13,6 +13,9 @@ import {
   Lock,
   Mail,
   ArrowLeft,
+  Users,
+  UserPlus,
+  Code2,
 } from "lucide-react";
 import Link from "next/link";
 import "../../globals.css";
@@ -30,19 +33,19 @@ const Modal = ({
 }) => (
   <AnimatePresence>
     {isOpen && (
-      <>
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={onClose}
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 transition-opacity"
+          className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
         />
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl p-6 w-full max-w-sm z-50 text-center"
+          className="relative bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl p-6 w-full max-w-sm z-50 text-center"
         >
           <h3 className="text-xl font-bold text-white mb-2">{title}</h3>
           <p className="text-slate-300 mb-6">{message}</p>
@@ -59,7 +62,7 @@ const Modal = ({
             OK
           </button>
         </motion.div>
-      </>
+      </div>
     )}
   </AnimatePresence>
 );
@@ -74,6 +77,11 @@ export default function ProfilePage() {
   const [avatarUrl, setAvatarUrl] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [stats, setStats] = useState({
+    followers: 0,
+    following: 0,
+    snippets: 0,
+  });
 
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
@@ -101,6 +109,29 @@ export default function ProfilePage() {
       setDisplayName(user.user_metadata?.display_name || "");
       setUsername(user.user_metadata?.username || "");
       setAvatarUrl(user.user_metadata?.avatar_url || "");
+
+      // Fetch Stats
+      const { count: followers } = await supabase
+        .from("follows")
+        .select("*", { count: "exact", head: true })
+        .eq("following_id", user.id);
+
+      const { count: following } = await supabase
+        .from("follows")
+        .select("*", { count: "exact", head: true })
+        .eq("follower_id", user.id);
+
+      const { count: snippetCount } = await supabase
+        .from("contekans")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user.id);
+
+      setStats({
+        followers: followers || 0,
+        following: following || 0,
+        snippets: snippetCount || 0,
+      });
+
       setIsLoading(false);
     };
 
@@ -180,6 +211,16 @@ export default function ProfilePage() {
 
       if (metadataError) throw metadataError;
 
+      // 3. Sinkronisasi ke tabel public.profiles
+      const { error: syncError } = await supabase.from("profiles").upsert({
+        id: user?.id,
+        username: username,
+        display_name: displayName,
+        avatar_url: avatarUrl,
+      });
+
+      if (syncError) throw syncError;
+
       setNewPassword("");
       setConfirmPassword("");
       showNotification("Selesai", "Profil berhasil diperbarui!");
@@ -216,6 +257,49 @@ export default function ProfilePage() {
             <p className="text-sm text-slate-400 mt-1">
               Manage your personal information and security.
             </p>
+          </div>
+          <div className="ml-auto flex items-center gap-4">
+            <div className="hidden sm:flex items-center gap-6 px-6 py-3 bg-slate-800/30 rounded-2xl border border-slate-700/30">
+              <Link
+                href={`/u/${username}`}
+                className="text-center hover:bg-slate-700/30 p-1 rounded-lg transition-colors group/stat"
+              >
+                <p className="text-lg font-bold text-white leading-none group-hover/stat:text-cyan-400">
+                  {stats.followers}
+                </p>
+                <p className="text-[10px] text-slate-500 uppercase mt-1 tracking-wider">
+                  Followers
+                </p>
+              </Link>
+              <div className="w-px h-8 bg-slate-700/50" />
+              <Link
+                href={`/u/${username}`}
+                className="text-center hover:bg-slate-700/30 p-1 rounded-lg transition-colors group/stat"
+              >
+                <p className="text-lg font-bold text-white leading-none group-hover/stat:text-cyan-400">
+                  {stats.following}
+                </p>
+                <p className="text-[10px] text-slate-500 uppercase mt-1 tracking-wider">
+                  Following
+                </p>
+              </Link>
+              <div className="w-px h-8 bg-slate-700/50" />
+              <div className="text-center">
+                <p className="text-lg font-bold text-white leading-none">
+                  {stats.snippets}
+                </p>
+                <p className="text-[10px] text-slate-500 uppercase mt-1 tracking-wider">
+                  Snippets
+                </p>
+              </div>
+            </div>
+            <Link
+              href={`/u/${username}`}
+              className="px-5 py-2.5 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 rounded-xl border border-cyan-500/30 transition-all font-semibold text-sm flex items-center gap-2"
+            >
+              <UserIcon className="w-4 h-4" />
+              <span>Public Profile</span>
+            </Link>
           </div>
         </div>
 
