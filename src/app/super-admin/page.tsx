@@ -254,13 +254,23 @@ export default function SuperAdminPage() {
 
       if (error) throw error;
 
+      // Optional: Send "Welcome/Reset Password" email automatically on approval
+      const approvedUser = requests.find((r) => r.id === userId);
+      if (approvedUser?.email) {
+        await supabase.auth.resetPasswordForEmail(approvedUser.email, {
+          redirectTo: `${window.location.origin}/dashboard/profile`,
+        });
+      }
+
       setRequests(requests.filter((r) => r.id !== userId));
       setStats((prev) => ({
         ...prev,
         totalUsers: prev.totalUsers + 1,
         pendingApprovals: prev.pendingApprovals - 1,
       }));
-      alert("User approved!");
+      alert(
+        "User approved! A welcome email with a password setup link has been sent.",
+      );
     } catch (err: any) {
       alert("Error: " + err.message);
     } finally {

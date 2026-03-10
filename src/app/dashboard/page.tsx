@@ -173,6 +173,7 @@ export default function DashboardPage() {
           username: username,
           display_name: displayName,
           avatar_url: user.user_metadata?.avatar_url || "",
+          email: user.email,
         })
         .select("role, is_approved")
         .single();

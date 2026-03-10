@@ -27,7 +27,7 @@ export default function RegisterPage() {
 
     try {
       const { email, password, displayName, username } = formData;
-      const { error } = await supabase.auth.signUp({
+      const { data: authData, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -37,6 +37,19 @@ export default function RegisterPage() {
           },
         },
       });
+
+      if (error) throw error;
+
+      // Create profile entry immediately
+      if (authData.user) {
+        await supabase.from("profiles").upsert({
+          id: authData.user.id,
+          username: username,
+          display_name: displayName,
+          email: email,
+          is_approved: false, // Ensure defaults
+        });
+      }
 
       if (error) {
         throw error;
