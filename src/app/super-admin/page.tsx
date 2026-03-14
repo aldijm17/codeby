@@ -511,7 +511,7 @@ export default function SuperAdminPage() {
                   </button>
                 </div>
 
-                <div className="bg-slate-900/50 border border-slate-800 rounded-3xl overflow-hidden">
+                <div className="bg-slate-900/50 border border-slate-800 rounded-3xl overflow-hidden overflow-x-auto">
                   <table className="w-full text-left">
                     <thead>
                       <tr className="border-b border-slate-800 bg-slate-800/30">
@@ -679,7 +679,7 @@ export default function SuperAdminPage() {
                   </button>
                 </div>
 
-                <div className="bg-slate-900/50 border border-slate-800 rounded-3xl overflow-hidden">
+                <div className="bg-slate-900/50 border border-slate-800 rounded-3xl overflow-hidden overflow-x-auto">
                   <table className="w-full text-left">
                     <thead>
                       <tr className="border-b border-slate-800 bg-slate-800/30">
@@ -789,7 +789,7 @@ export default function SuperAdminPage() {
                 animate={{ opacity: 1 }}
                 className="space-y-6"
               >
-                <div className="bg-slate-900/50 border border-slate-800 rounded-3xl overflow-hidden">
+                <div className="bg-slate-900/50 border border-slate-800 rounded-3xl overflow-hidden overflow-x-auto">
                   <table className="w-full text-left">
                     <thead>
                       <tr className="border-b border-slate-800 bg-slate-800/30">
