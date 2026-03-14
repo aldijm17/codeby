@@ -12,6 +12,8 @@ const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
 });
 
+import SupabaseProvider from "@/providers/supabase-provider";
+
 export const metadata: Metadata = {
   title: "Contekan Koding - Premium Code Snippets",
   description: "Koleksi contekan kodingan premium untuk developer modern.",
@@ -28,7 +30,9 @@ export default function RootLayout({
         className={`${jakarta.variable} ${jetbrainsMono.variable} antialiased bg-[#0f172a] text-slate-200 selection:bg-cyan-500/30 selection:text-cyan-50`}
       >
         <div className="fixed inset-0 z-[-1] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-[#0f172a] to-black opacity-80 pointer-events-none" />
-        {children}
+        <SupabaseProvider>
+          {children}
+        </SupabaseProvider>
       </body>
     </html>
   );
