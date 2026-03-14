@@ -16,7 +16,7 @@ import SupabaseProvider from "@/providers/supabase-provider";
 
 export const metadata: Metadata = {
   title: "Contekan Koding - Premium Code Snippets",
-  description: "Koleksi contekan kodingan premium untuk developer modern.",
+  description: "Koleksi contekan kodingan premium untuk developer modern dengan fitur super admin .",
 };
 
 export default function RootLayout({
