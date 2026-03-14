@@ -609,22 +609,7 @@ export default function SuperAdminPage() {
                                       )}
                                     </button>
                                   )}
-                                  <button
-                                    onClick={() =>
-                                      handleResetPassword(u.email || "")
-                                    }
-                                    disabled={
-                                      actionLoading === (u.email || u.id)
-                                    }
-                                    className="p-2 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 rounded-lg transition-all"
-                                    title="Send Password Reset"
-                                  >
-                                    {actionLoading === (u.email || u.id) ? (
-                                      <Loader2 className="w-4 h-4 animate-spin" />
-                                    ) : (
-                                      <Mail className="w-4 h-4" />
-                                    )}
-                                  </button>
+                                
                                   <button
                                     onClick={() =>
                                       handleDeleteUser(u.id, u.username)
