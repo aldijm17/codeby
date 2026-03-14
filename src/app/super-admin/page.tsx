@@ -21,6 +21,8 @@ import {
   CheckCircle2,
   XCircle,
   Clock,
+  X,
+  Menu,
   ShieldPlus,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -40,6 +42,7 @@ export default function SuperAdminPage() {
     "users" | "snippets" | "dashboard" | "requests"
   >("dashboard");
   const [searchQuery, setSearchQuery] = useState("");
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const [stats, setStats] = useState<DashboardStats>({
     totalUsers: 0,
@@ -320,16 +323,41 @@ export default function SuperAdminPage() {
 
   return (
     <div className="flex h-screen bg-[#0f172a] text-slate-200">
+      {/* Mobile Sidebar Overlay */}
+      <AnimatePresence>
+        {isSidebarOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsSidebarOpen(false)}
+            className="md:hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+          />
+        )}
+      </AnimatePresence>
+
       {/* Sidebar Admin */}
-      <aside className="w-64 bg-slate-900 border-r border-slate-800 flex flex-col pt-8">
-        <div className="px-6 mb-10">
-          <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-red-500 to-orange-500 flex items-center gap-2">
-            <ShieldAlert className="w-6 h-6 text-red-500" />
-            Super Admin
-          </h1>
-          <p className="text-xs text-slate-500 mt-1 uppercase tracking-widest font-bold">
-            Control Panel
-          </p>
+      <aside
+        className={`fixed md:static inset-y-0 left-0 z-50 w-64 bg-slate-900 border-r border-slate-800 flex flex-col pt-8 transition-transform duration-300 ease-in-out ${
+          isSidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+        }`}
+      >
+        <div className="px-6 mb-10 flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-red-500 to-orange-500 flex items-center gap-2">
+              <ShieldAlert className="w-6 h-6 text-red-500" />
+              Super Admin
+            </h1>
+            <p className="text-xs text-slate-500 mt-1 uppercase tracking-widest font-bold">
+              Control Panel
+            </p>
+          </div>
+          <button
+            onClick={() => setIsSidebarOpen(false)}
+            className="md:hidden p-2 text-slate-400 hover:text-white transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
 
         <nav className="flex-1 px-4 space-y-2">
@@ -386,12 +414,18 @@ export default function SuperAdminPage() {
 
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto bg-slate-950/20">
-        <header className="h-20 border-b border-slate-800 flex items-center justify-between px-10 bg-slate-900/30 backdrop-blur-md sticky top-0 z-10">
-          <h2 className="text-2xl font-bold text-white capitalize">
+        <header className="h-20 border-b border-slate-800 flex items-center px-6 md:px-10 bg-slate-900/30 backdrop-blur-md sticky top-0 z-10 gap-4">
+          <button
+            onClick={() => setIsSidebarOpen(true)}
+            className="md:hidden p-2 text-slate-400 hover:text-white"
+          >
+            <Menu className="w-6 h-6" />
+          </button>
+          <h2 className="text-xl md:text-2xl font-bold text-white capitalize flex-1">
             {activeTab}
           </h2>
           <div className="flex items-center gap-4">
-            <div className="text-right">
+            <div className="text-right hidden sm:block">
               <p className="text-xs text-slate-400">Authenticated as</p>
               <p className="text-sm font-bold text-cyan-400">
                 Super Admin Mode
@@ -400,7 +434,7 @@ export default function SuperAdminPage() {
           </div>
         </header>
 
-        <div className="p-10">
+        <div className="p-4 md:p-10">
           <AnimatePresence mode="wait">
             {activeTab === "dashboard" && (
               <motion.div
