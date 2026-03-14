@@ -27,8 +27,23 @@ export default function LoginPage() {
     if (error) {
       setErrorMessage(error.message);
     } else if (authData.user) {
-      router.push("/dashboard");
+      // Check if user is approved
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("is_approved, role")
+        .eq("id", authData.user.id)
+        .single();
+
+      if (profileError || (!profile?.is_approved && profile?.role !== "super_admin")) {
+        await supabase.auth.signOut();
+        setErrorMessage(
+          "Akun Anda sedang menunggu persetujuan dari Super Admin. Silakan cek kembali nanti.",
+        );
+      } else {
+        router.push("/dashboard");
+      }
     }
+
     setLoading(false);
   };
 
@@ -38,6 +53,9 @@ export default function LoginPage() {
       provider: "google",
       options: {
         redirectTo: `${window.location.origin}/auth/callback`,
+        queryParams: {
+          prompt: "select_account",
+        },
       },
     });
 

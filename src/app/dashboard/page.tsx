@@ -141,31 +141,8 @@ export default function DashboardPage() {
     isConfirmation: false,
   });
   const [userRole, setUserRole] = useState<string | null>(null);
-  const [isApproved, setIsApproved] = useState<boolean | null>(null);
 
   const router = useRouter();
-
-  const checkApprovalStatus = async () => {
-    try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("role, is_approved")
-        .eq("id", user.id)
-        .single();
-
-      if (profile) {
-        setUserRole(profile.role);
-        setIsApproved(profile.is_approved);
-      }
-    } catch (err) {
-      console.error("Manual refresh error:", err);
-    }
-  };
 
   useEffect(() => {
     const initialize = async () => {
@@ -190,33 +167,31 @@ export default function DashboardPage() {
         user.user_metadata?.display_name || user.email?.split("@")[0] || "User";
 
       try {
-        const { data: profile, error: profileError } = await supabase
+        let { data: profile, error: profileError } = await supabase
           .from("profiles")
-          .upsert({
-            id: user.id,
-            username: username,
-            display_name: displayName,
-            avatar_url: user.user_metadata?.avatar_url || "",
-            email: user.email,
-          })
-          .select("role, is_approved")
+          .select("role")
+          .eq("id", user.id)
           .single();
 
-        if (profileError) {
-          console.error("Profile sync error:", profileError);
-          // Fallback: Just fetch role if upsert/select fails (e.g. missing is_approved column)
-          const { data: fallbackProfile } = await supabase
+        if (profileError || !profile) {
+          const { data: newProfile, error: insertError } = await supabase
             .from("profiles")
+            .insert({
+              id: user.id,
+              username: username,
+              display_name: displayName,
+              avatar_url: user.user_metadata?.avatar_url || "",
+              email: user.email,
+              is_approved: true, // We removed the manual approval
+            })
             .select("role")
-            .eq("id", user.id)
             .single();
 
-          if (fallbackProfile) {
-            setUserRole(fallbackProfile.role);
-          }
-        } else if (profile) {
+          if (!insertError) profile = newProfile;
+        }
+
+        if (profile) {
           setUserRole(profile.role);
-          setIsApproved(profile.is_approved);
         }
       } catch (err) {
         console.error("Critical Profile Error:", err);
@@ -532,79 +507,7 @@ export default function DashboardPage() {
     );
   }
 
-  if (isApproved === false) {
-    return (
-      <div className="min-h-screen bg-[#0f172a] flex items-center justify-center p-6 relative overflow-hidden">
-        {/* Decorative Background */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-cyan-500/10 blur-[120px] rounded-full pointer-events-none" />
-
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="max-w-md w-full glass p-10 rounded-3xl shadow-2xl relative z-10 text-center border border-slate-700/50"
-        >
-          <div className="w-20 h-20 bg-cyan-500/10 rounded-2xl flex items-center justify-center mx-auto mb-8 relative">
-            <Clock className="w-10 h-10 text-cyan-400 animate-pulse" />
-            <div className="absolute -top-2 -right-2 w-6 h-6 bg-cyan-500 rounded-full flex items-center justify-center border-4 border-[#0f172a]">
-              <ShieldAlert className="w-3 h-3 text-white" />
-            </div>
-          </div>
-
-          <h1 className="text-3xl font-extrabold text-white mb-4 tracking-tight">
-            Account Pending
-          </h1>
-          <p className="text-slate-400 leading-relaxed mb-8">
-            Welcome to <span className="text-cyan-400 font-bold">CodeBy</span>!
-            Your account is currently in the verification queue. A Super Admin
-            will review your registration shortly.
-          </p>
-
-          <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 mb-8 text-left">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-2 h-2 bg-cyan-500 rounded-full animate-ping" />
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">
-                What's Next?
-              </span>
-            </div>
-            <ul className="space-y-3">
-              <li className="flex items-start gap-3 text-sm text-slate-300">
-                <div className="w-5 h-5 rounded-full bg-cyan-500/10 flex items-center justify-center shrink-0 mt-0.5">
-                  <span className="text-[10px] font-bold text-cyan-400">1</span>
-                </div>
-                Admin verifies your profile credentials.
-              </li>
-              <li className="flex items-start gap-3 text-sm text-slate-300">
-                <div className="w-5 h-5 rounded-full bg-cyan-500/10 flex items-center justify-center shrink-0 mt-0.5">
-                  <span className="text-[10px] font-bold text-cyan-400">2</span>
-                </div>
-                You'll receive full access to all features.
-              </li>
-            </ul>
-          </div>
-
-          <button
-            onClick={checkApprovalStatus}
-            className="w-full py-4 px-6 bg-cyan-500 hover:bg-cyan-400 text-[#0f172a] font-bold rounded-xl shadow-lg shadow-cyan-500/20 transition-all flex items-center justify-center gap-2 mb-3"
-          >
-            <Loader2 className={`w-5 h-5 ${isLoading ? "animate-spin" : ""}`} />
-            Refresh Status
-          </button>
-
-          <button
-            onClick={handleLogout}
-            className="w-full py-4 px-6 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl transition-all border border-slate-700 flex items-center justify-center gap-2 group"
-          >
-            <LogOut className="w-5 h-5 group-hover:text-red-400 transition-colors" />
-            Sign Out
-          </button>
-
-          <p className="text-[10px] text-slate-500 mt-8 uppercase tracking-[0.2em] font-medium">
-            Secured by CodeBy Sentinel
-          </p>
-        </motion.div>
-      </div>
-    );
-  }
+  // Removed Account Pending Screen
 
   return (
     <>

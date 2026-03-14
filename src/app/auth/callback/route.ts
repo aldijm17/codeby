@@ -1,4 +1,4 @@
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
+  import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
@@ -36,21 +36,29 @@ export async function GET(request: NextRequest) {
       });
 
       // Sinkronisasi ke tabel public.profiles
-      await supabase.from("profiles").upsert({
+      const { error: upsertError1 } = await supabase.from("profiles").upsert({
         id: user.id,
         username: emailUsername,
         display_name: displayName,
         avatar_url: avatarUrl,
+        role: "user",
+        is_approved: true, // Default for new users
+        email: user.email,
       });
+      if (upsertError1) console.error("Error creating profile:", upsertError1);
     } else if (user) {
       // Pastikan data profil sinkron jika sudah ada username
-      await supabase.from("profiles").upsert({
+      const { error: upsertError2 } = await supabase.from("profiles").upsert({
         id: user.id,
-        username: user.user_metadata.username,
-        display_name: user.user_metadata.display_name,
-        avatar_url: user.user_metadata.avatar_url,
+        username: user.user_metadata?.username || user.email?.split("@")[0],
+        display_name: user.user_metadata?.display_name || user.user_metadata?.full_name || user.email?.split("@")[0],
+        avatar_url: user.user_metadata?.avatar_url || "",
+        email: user.email,
+        // Don't overwrite is_approved if it exists, but ensure it's set if missing
       });
+      if (upsertError2) console.error("Error updating profile:", upsertError2);
     }
+
   }
 
   // Redirect user ke halaman tujuan (misal: /update-password)

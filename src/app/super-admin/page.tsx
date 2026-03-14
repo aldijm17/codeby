@@ -21,6 +21,7 @@ import {
   CheckCircle2,
   XCircle,
   Clock,
+  ShieldPlus,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
@@ -206,6 +207,37 @@ export default function SuperAdminPage() {
       if (error) throw error;
       setUsers(users.filter((u) => u.id !== userId));
       alert("User berhasil dihapus.");
+    } catch (err: any) {
+      alert("Error: " + err.message);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handlePromoteSuperAdmin = async (userId: string, username: string) => {
+    if (
+      !confirm(
+        `Jadikan user @${username} sebagai Super Admin? Mereka akan memiliki akses penuh ke sistem ini.`,
+      )
+    )
+      return;
+
+    setActionLoading(`promote-${userId}`);
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ role: "super_admin" })
+        .eq("id", userId);
+
+      if (error) throw error;
+      
+      // Update local state
+      setUsers(
+        users.map((u) =>
+          u.id === userId ? { ...u, role: "super_admin" } : u
+        )
+      );
+      alert(`Berhasil! @${username} sekarang adalah Super Admin.`);
     } catch (err: any) {
       alert("Error: " + err.message);
     } finally {
@@ -527,6 +559,22 @@ export default function SuperAdminPage() {
                               </td>
                               <td className="px-6 py-4 text-right">
                                 <div className="flex justify-end gap-2">
+                                  {u.role !== "super_admin" && (
+                                    <button
+                                      onClick={() =>
+                                        handlePromoteSuperAdmin(u.id, u.username)
+                                      }
+                                      disabled={actionLoading === `promote-${u.id}`}
+                                      className="p-2 bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 rounded-lg transition-all"
+                                      title="Promote to Super Admin"
+                                    >
+                                      {actionLoading === `promote-${u.id}` ? (
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                      ) : (
+                                        <ShieldPlus className="w-4 h-4" />
+                                      )}
+                                    </button>
+                                  )}
                                   <button
                                     onClick={() =>
                                       handleResetPassword(u.email || "")

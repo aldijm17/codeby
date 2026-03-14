@@ -16,6 +16,8 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(redirectUrl);
   }
 
+
+
   if (
     session &&
     (req.nextUrl.pathname.startsWith("/login") || req.nextUrl.pathname === "/")
@@ -24,6 +26,7 @@ export async function middleware(req: NextRequest) {
     redirectUrl.pathname = "/dashboard";
     return NextResponse.redirect(redirectUrl);
   }
+
 
   return res;
 }

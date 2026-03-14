@@ -47,7 +47,8 @@ export default function RegisterPage() {
           username: username,
           display_name: displayName,
           email: email,
-          is_approved: false, // Ensure defaults
+          role: "user",
+          is_approved: true, // Auto-approve upon registration
         });
       }
 
