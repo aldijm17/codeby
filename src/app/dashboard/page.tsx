@@ -503,7 +503,12 @@ export default function DashboardPage() {
 
   return (
     <>
-      <div className="flex h-screen overflow-hidden bg-[#0f172a]">
+      <div className="flex h-screen overflow-hidden bg-[#0B1120] relative z-0">
+        {/* Dynamic Backgrounds & Grid */}
+        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-cyan-700/10 blur-[150px] rounded-full pointer-events-none -z-10 animate-pulse" />
+        <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-purple-700/10 blur-[150px] rounded-full pointer-events-none -z-10" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:32px_32px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] -z-20 pointer-events-none"></div>
+
         <AnimatePresence>
           {isSidebarOpen && (
             <motion.div
@@ -517,9 +522,10 @@ export default function DashboardPage() {
         </AnimatePresence>
 
         <motion.aside
-          className={`fixed md:relative w-72 h-full bg-slate-900 border-r border-slate-800 flex flex-col z-40 md:translate-x-0 transition-transform duration-300 ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}`}
+          className={`fixed md:relative w-72 h-full bg-slate-900/60 backdrop-blur-2xl border-r border-slate-800/60 flex flex-col z-40 md:translate-x-0 transition-transform duration-300 ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}`}
         >
-          <header className="p-6 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
+          <header className="p-6 border-b border-slate-700/40 flex justify-between items-center bg-slate-900/40 relative overflow-hidden">
+             <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/10 blur-[40px] rounded-full pointer-events-none -z-10" />
             <Link
               href="/dashboard/profile"
               className="flex items-center gap-3 w-full hover:bg-slate-800/50 p-2 -m-2 rounded-xl transition-colors cursor-pointer group"
@@ -676,7 +682,7 @@ export default function DashboardPage() {
                   setViewMode("view");
                   if (window.innerWidth < 768) setIsSidebarOpen(false);
                 }}
-                className={`group p-3 rounded-xl cursor-pointer transition-all border relative overflow-hidden ${currentItem?.id === c.id && viewMode !== "add" ? "bg-gradient-to-r from-cyan-900/20 to-blue-900/20 border-cyan-500/30 shadow-lg shadow-cyan-900/10" : "border-transparent hover:bg-slate-800/50 hover:border-slate-700"}`}
+                className={`group p-3.5 rounded-2xl cursor-pointer transition-all border relative overflow-hidden ${currentItem?.id === c.id && viewMode !== "add" ? "bg-slate-800/80 border-cyan-500/40 shadow-[0_0_15px_rgba(6,182,212,0.15)]" : "bg-transparent border-transparent hover:bg-slate-800/40 hover:border-slate-700/50"}`}
               >
                 <div className="flex items-center gap-3 relative z-10">
                   <div
@@ -776,12 +782,14 @@ export default function DashboardPage() {
                     exit={{ opacity: 0, y: -20 }}
                     transition={{ duration: 0.3 }}
                   >
-                    <header className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-8">
+                    <header className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-8 relative">
+                      {/* Glow effect behind header */}
+                      <div className="absolute top-0 left-0 w-[300px] h-[100px] bg-cyan-500/20 blur-[80px] rounded-full pointer-events-none -z-10 animate-pulse" />
                       <div>
-                        <h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-slate-100 to-slate-400">
+                        <h2 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-white via-cyan-100 to-blue-200 tracking-tight">
                           {currentItem.judul}
                         </h2>
-                        <p className="text-slate-400 mt-2 leading-relaxed">
+                        <p className="text-slate-300 mt-3 leading-relaxed text-lg max-w-2xl border-l-2 border-cyan-500/30 pl-4">
                           {currentItem.deskripsi}
                         </p>
                         <div className="flex items-center gap-2 mt-4 text-xs font-medium text-slate-500 bg-slate-800/50 inline-flex px-3 py-1 rounded-full">
@@ -825,13 +833,13 @@ export default function DashboardPage() {
                           <div className="flex gap-2 shrink-0">
                             <button
                               onClick={() => handleEdit(currentItem)}
-                              className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg border border-slate-700 transition-all font-medium"
+                              className="flex items-center gap-2 px-5 py-2.5 bg-slate-800/80 hover:bg-slate-700/80 backdrop-blur-md text-slate-200 rounded-xl border border-slate-700 transition-all font-semibold shadow-lg shadow-black/20 hover:shadow-cyan-500/10"
                             >
                               <Edit className="w-4 h-4" /> Edit
                             </button>
                             <button
                               onClick={() => handleDelete(currentItem.id)}
-                              className="flex items-center gap-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-lg transition-all font-medium"
+                              className="flex items-center gap-2 px-5 py-2.5 bg-red-500/10 hover:bg-red-500/20 backdrop-blur-md text-red-400 border border-red-500/20 rounded-xl transition-all font-semibold shadow-lg shadow-black/20 hover:shadow-red-500/10"
                             >
                               <Trash2 className="w-4 h-4" /> Delete
                             </button>
@@ -839,12 +847,13 @@ export default function DashboardPage() {
                         )}
                     </header>
 
-                    <div className="glass rounded-xl overflow-hidden shadow-2xl border border-slate-700/50 mt-6 bg-[#0B1120]">
-                      <div className="flex items-center justify-between px-4 py-2 bg-slate-900/80 border-b border-slate-700/50">
-                        <div className="flex gap-1.5">
-                          <div className="w-3 h-3 rounded-full bg-red-500/20 box-border border-red-500/50" />
-                          <div className="w-3 h-3 rounded-full bg-yellow-500/20 box-border border-yellow-500/50" />
-                          <div className="w-3 h-3 rounded-full bg-green-500/20 box-border border-green-500/50" />
+                    <div className="rounded-[2rem] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.6)] border border-slate-700/60 mt-10 bg-slate-900/60 backdrop-blur-3xl relative group">
+                      <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none"></div>
+                      <div className="flex items-center justify-between px-5 py-4 bg-slate-950/80 border-b border-white/5 relative z-10 shadow-inner">
+                        <div className="flex gap-2">
+                          <div className="w-3.5 h-3.5 rounded-full bg-red-500/80 box-border border border-red-400/50 shadow-[0_0_10px_rgba(239,68,68,0.5)]" />
+                          <div className="w-3.5 h-3.5 rounded-full bg-yellow-500/80 box-border border border-yellow-400/50 shadow-[0_0_10px_rgba(234,179,8,0.5)]" />
+                          <div className="w-3.5 h-3.5 rounded-full bg-green-500/80 box-border border border-green-400/50 shadow-[0_0_10px_rgba(34,197,94,0.5)]" />
                         </div>
                         <div className="flex items-center gap-3">
                           <span className="text-xs font-mono text-slate-500 uppercase">
@@ -888,17 +897,18 @@ export default function DashboardPage() {
                 {(viewMode === "add" || viewMode === "edit") && (
                   <motion.div
                     key="form"
-                    initial={{ opacity: 0, scale: 0.98 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.98 }}
-                    className="max-w-3xl mx-auto"
+                    initial={{ opacity: 0, scale: 0.98, y: 10 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.98, y: 10 }}
+                    className="max-w-4xl mx-auto bg-slate-900/40 backdrop-blur-2xl p-6 sm:p-10 rounded-[2.5rem] border border-slate-700/50 shadow-[0_20px_60px_rgba(0,0,0,0.4)] relative"
                   >
-                    <div className="flex items-center justify-between mb-8">
-                      <h2 className="text-2xl font-bold text-slate-100 flex items-center gap-3">
+                    <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-cyan-500/10 blur-[100px] rounded-full pointer-events-none -z-10" />
+                    <div className="flex items-center justify-between mb-10 pb-6 border-b border-slate-700/50">
+                      <h2 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-white to-cyan-200 flex items-center gap-4 drop-shadow-sm">
                         {viewMode === "add" ? (
-                          <Plus className="w-6 h-6 text-cyan-400" />
+                          <div className="p-3 bg-cyan-500/10 rounded-2xl border border-cyan-500/20"><Plus className="w-7 h-7 text-cyan-400" /></div>
                         ) : (
-                          <Edit className="w-6 h-6 text-cyan-400" />
+                          <div className="p-3 bg-cyan-500/10 rounded-2xl border border-cyan-500/20"><Edit className="w-7 h-7 text-cyan-400" /></div>
                         )}
                         {viewMode === "add"
                           ? "Create New Snippet"
@@ -928,7 +938,7 @@ export default function DashboardPage() {
                               judul: e.target.value,
                             })
                           }
-                          className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-xl focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 focus:outline-none transition-all text-slate-200 placeholder:text-slate-600 text-lg font-semibold"
+                          className="w-full px-5 py-4 bg-slate-950/50 backdrop-blur-xl border border-slate-700/60 rounded-2xl focus:ring-2 focus:ring-cyan-500/40 focus:border-cyan-500/50 focus:outline-none transition-all text-slate-100 placeholder:text-slate-600 text-lg font-semibold shadow-inner"
                           required
                         />
                       </div>
@@ -946,7 +956,7 @@ export default function DashboardPage() {
                               deskripsi: e.target.value,
                             })
                           }
-                          className="w-full h-24 px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-xl focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 focus:outline-none transition-all text-slate-200 placeholder:text-slate-600 resize-none"
+                          className="w-full h-32 px-5 py-4 bg-slate-950/50 backdrop-blur-xl border border-slate-700/60 rounded-2xl focus:ring-2 focus:ring-cyan-500/40 focus:border-cyan-500/50 focus:outline-none transition-all text-slate-200 placeholder:text-slate-600 resize-none shadow-inner text-base"
                         />
                       </div>
 
@@ -963,7 +973,7 @@ export default function DashboardPage() {
                                 language: e.target.value,
                               })
                             }
-                            className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-xl focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 focus:outline-none transition-all text-slate-200"
+                            className="w-full px-5 py-4 bg-slate-950/50 backdrop-blur-xl border border-slate-700/60 rounded-2xl focus:ring-2 focus:ring-cyan-500/40 focus:border-cyan-500/50 focus:outline-none transition-all text-slate-200 shadow-inner font-mono text-sm"
                           >
                             <option value="javascript">
                               JavaScript / TypeScript
@@ -999,7 +1009,7 @@ export default function DashboardPage() {
                                 tags: e.target.value,
                               })
                             }
-                            className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-xl focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 focus:outline-none transition-all text-slate-200 placeholder:text-slate-600"
+                            className="w-full px-5 py-4 bg-slate-950/50 backdrop-blur-xl border border-slate-700/60 rounded-2xl focus:ring-2 focus:ring-cyan-500/40 focus:border-cyan-500/50 focus:outline-none transition-all text-slate-200 placeholder:text-slate-600 shadow-inner"
                           />
                         </div>
                       </div>
@@ -1051,7 +1061,7 @@ export default function DashboardPage() {
                                 isi: e.target.value,
                               })
                             }
-                            className="w-full h-96 p-4 bg-[#0B1120] border border-slate-700 rounded-xl focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 focus:outline-none transition-all text-cyan-50 font-mono text-sm leading-relaxed"
+                            className="w-full h-[500px] p-6 bg-slate-950/80 backdrop-blur-3xl border border-slate-700/60 rounded-2xl focus:ring-2 focus:ring-cyan-500/40 focus:border-cyan-500/50 focus:outline-none transition-all text-cyan-50 font-mono text-sm leading-relaxed shadow-inner"
                             required
                           />
                         </div>
@@ -1068,7 +1078,7 @@ export default function DashboardPage() {
                         <button
                           type="submit"
                           disabled={isUploading}
-                          className="flex items-center gap-2 px-8 py-2.5 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-semibold rounded-xl shadow-lg shadow-cyan-900/20 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+                          className="flex items-center justify-center gap-2 px-8 py-4 w-full md:w-auto bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold rounded-xl shadow-[0_0_20px_rgba(6,182,212,0.4)] hover:shadow-[0_0_30px_rgba(6,182,212,0.6)] transition-all disabled:opacity-70 disabled:cursor-not-allowed hover:scale-105"
                         >
                           {isUploading ? (
                             <Loader2 className="w-4 h-4 animate-spin" />

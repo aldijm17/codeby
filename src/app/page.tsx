@@ -1,880 +1,261 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { atomDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 import Link from "next/link";
-import { motion, AnimatePresence, Variants } from "framer-motion";
+import { motion } from "framer-motion";
 import {
-  Search,
-  Copy,
-  Check,
-  User,
-  Code2,
   Terminal,
-  Calendar,
-  ChevronRight,
-  X,
-  Filter,
-  FileText,
-  Plus,
-  Loader2,
+  Code2,
   Users,
-  UserPlus,
-  ShieldAlert,
+  LayoutTemplate,
+  ChevronRight,
+  Sparkles,
+  Zap,
+  ShieldCheck,
+  ArrowRight
 } from "lucide-react";
-import { Toaster, toast } from "sonner";
 import "./globals.css";
 
-interface Contekan {
-  id: string;
-  judul: string;
-  isi: string;
-  created_at: string;
-  deskripsi: string;
-  user_display_name: string;
-  user_id: string;
-  file_content?: string;
-  profiles?: {
-    username: string;
-    display_name: string;
-  };
-}
-
-const LoadingSpinner = () => (
-  <div className="flex justify-center items-center h-64">
-    <motion.div
-      animate={{ rotate: 360 }}
-      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-      className="rounded-full h-12 w-12 border-t-2 border-b-2 border-cyan-400"
-    />
-  </div>
-);
-
 export default function Home() {
-  const [contekans, setContekans] = useState<Contekan[]>([]);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [copied, setCopied] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [activeFilter, setActiveFilter] = useState<"terbaru" | "terlama">(
-    "terbaru",
-  );
-  const [selectedContekan, setSelectedContekan] = useState<Contekan | null>(
-    null,
-  );
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
-  const [currentUser, setCurrentUser] = useState<any>(null);
-  const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
-
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [newSnippet, setNewSnippet] = useState({
-    judul: "",
-    deskripsi: "",
-    isi: "",
-    user_display_name: "Guest",
-  });
+  const router = useRouter();
+  const [isChecking, setIsChecking] = useState(true);
+  const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
-    const fetchContekans = async () => {
-      setIsLoading(true);
-      try {
-        const { data, error } = await supabase
-          .from("contekans")
-          .select("*, profiles(username, display_name)");
-        if (error) throw error;
-        setContekans(data as any[]);
-      } catch (err: any) {
-        console.error("Error fetching contekans: ", err.message || err);
-      } finally {
-        setIsLoading(false);
-      }
+    const checkUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+      setIsChecking(false);
     };
-    fetchContekans();
-
-    const fetchUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (user) {
-        setCurrentUser(user);
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("role")
-          .eq("id", user.id)
-          .single();
-        if (profile) {
-          setCurrentUserRole(profile.role);
-        }
-      }
-    };
-    fetchUser();
+    checkUser();
   }, []);
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
-        setIsDropdownOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [dropdownRef]);
-
-  const [foundUsers, setFoundUsers] = useState<any[]>([]);
-  const [isSearchingUsers, setIsSearchingUsers] = useState(false);
-
-  useEffect(() => {
-    const searchUsers = async () => {
-      const trimmedQuery = searchQuery.trim();
-      const cleanQuery = trimmedQuery.startsWith("@")
-        ? trimmedQuery.slice(1)
-        : trimmedQuery;
-      console.log("Search input:", searchQuery);
-      console.log("Cleaned query:", cleanQuery);
-
-      if (cleanQuery.length < 2) {
-        setFoundUsers([]);
-        return;
-      }
-      setIsSearchingUsers(true);
-      try {
-        console.log("Searching for user with query:", cleanQuery);
-        const { data, error } = await supabase
-          .from("profiles")
-          .select(
-            `
-            *,
-            contekans:contekans(count),
-            followers:follows!follows_following_id_fkey(count),
-            following:follows!follows_follower_id_fkey(count)
-          `,
-          )
-          .or(
-            `username.ilike.%${cleanQuery}%,display_name.ilike.%${cleanQuery}%`,
-          )
-          .limit(5);
-
-        if (error) throw error;
-        console.log("Search results (with stats):", data);
-        setFoundUsers(data || []);
-      } catch (err) {
-        console.warn("Retrying basic search due to error:", err);
-        const { data, error } = await supabase
-          .from("profiles")
-          .select("*")
-          .or(
-            `username.ilike.%${cleanQuery}%,display_name.ilike.%${cleanQuery}%`,
-          )
-          .limit(5);
-        console.log("Basic search results:", data, error);
-        setFoundUsers(data || []);
-      } finally {
-        setIsSearchingUsers(false);
-      }
-    };
-
-    const timer = setTimeout(searchUsers, 300);
-    return () => clearTimeout(timer);
-  }, [searchQuery]);
-
-  const sortedAndFilteredContekans = useMemo(() => {
-    return contekans
-      .filter(
-        (c) =>
-          c.judul.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          (c.deskripsi &&
-            c.deskripsi.toLowerCase().includes(searchQuery.toLowerCase())),
-      )
-      .sort((a, b) => {
-        const dateA = new Date(a.created_at).getTime();
-        const dateB = new Date(b.created_at).getTime();
-        return activeFilter === "terbaru" ? dateB - dateA : dateA - dateB;
-      });
-  }, [contekans, searchQuery, activeFilter]);
-
-  const handleItemClick = (contekan: Contekan) => {
-    setSelectedContekan(contekan);
-    setCopied(false);
-  };
-
-  const handleClosePanel = () => {
-    setSelectedContekan(null);
-  };
-
-  const handleCopy = (text: string) => {
-    navigator.clipboard.writeText(text);
-    setCopied(true);
-    toast.success("Kode berhasil disalin!", {
-      description: "Kodingan siap di-paste ke project kamu.",
-      style: {
-        background: "rgba(30, 41, 59, 0.9)",
-        border: "1px solid rgba(56, 189, 248, 0.3)",
-        color: "#f8fafc",
-        backdropFilter: "blur(12px)",
-      },
-    });
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  const handleAddSnippet = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    try {
-      const { data, error } = await supabase
-        .from("contekans")
-        .insert([
-          {
-            judul: newSnippet.judul,
-            deskripsi: newSnippet.deskripsi,
-            isi: newSnippet.isi,
-            user_display_name: newSnippet.user_display_name,
-          },
-        ])
-        .select();
-
-      if (error) throw error;
-
-      setContekans((prev) => [data[0] as Contekan, ...prev]);
-      setIsAddModalOpen(false);
-      setNewSnippet({
-        judul: "",
-        deskripsi: "",
-        isi: "",
-        user_display_name: "Guest",
-      });
-      toast.success("Contekan berhasil ditambahkan!", {
-        style: {
-          background: "rgba(30, 41, 59, 0.9)",
-          border: "1px solid rgba(56, 189, 248, 0.3)",
-          color: "#f8fafc",
-        },
-      });
-    } catch (err) {
-      console.error("Error adding snippet: ", err);
-      toast.error("Gagal menambahkan contekan.", {
-        style: {
-          background: "rgba(30, 41, 59, 0.9)",
-          border: "1px solid rgba(239, 68, 68, 0.3)",
-          color: "#f8fafc",
-        },
-      });
-    } finally {
-      setIsSubmitting(false);
+  const handleGetStarted = () => {
+    if (user) {
+      router.push("/dashboard");
+    } else {
+      router.push("/login");
     }
   };
 
-  const containerVariants: Variants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-      },
-    },
-  };
-
-  const itemVariants: Variants = {
-    hidden: { y: 20, opacity: 0 },
-    visible: {
-      y: 0,
-      opacity: 1,
-      transition: { type: "spring", stiffness: 100 },
-    },
-  };
-
   return (
-    <div className="min-h-screen text-slate-200 p-4 sm:p-6 lg:p-8 font-sans">
-      <Toaster position="bottom-right" />
-      <div className="max-w-5xl mx-auto">
-        <header className="mb-12 text-center relative pointer-events-none">
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[200px] bg-cyan-500/20 blur-[100px] rounded-full pointer-events-none -z-10 animate-pulse" />
-
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
-            className="pointer-events-auto"
-          >
-            <div className="flex items-center justify-center gap-3 mb-4">
-              <div className="p-3 bg-gradient-to-br from-cyan-400 to-blue-600 rounded-xl shadow-lg shadow-cyan-500/20 animate-float">
-                <Terminal className="w-8 h-8 text-white" />
-              </div>
-            </div>
-            <h1 className="text-3xl sm:text-5xl lg:text-7xl font-extrabold tracking-tight relative">
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-cyan-300 via-blue-400 to-purple-400 animate-gradient-xy">
-                CodeBy
-              </span>
-              <span className="absolute -inset-1 blur-2xl bg-gradient-to-r from-cyan-400 to-purple-600 opacity-20 animate-gradient-xy"></span>
-            </h1>
-            <p className="mt-4 text-slate-400 text-base sm:text-xl max-w-lg mx-auto leading-relaxed">
-              Koleksi contekan kodingan{" "}
-              <span className="text-cyan-400 font-semibold text-glow">
-                premium
-              </span>{" "}
-              untuk developer modern.
-            </p>
-          </motion.div>
-        </header>
-
-        <div className="glass rounded-2xl p-4 mb-8 sticky top-4 z-20 shadow-2xl shadow-black/20 hover:border-cyan-500/30 transition-colors">
-          <div className="flex flex-col md:flex-row gap-4 items-center">
-            <div className="relative flex-1 w-full group">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5 group-focus-within:text-cyan-400 transition-colors" />
-              <input
-                type="text"
-                placeholder="Cari snippet atau developer..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-900/50 border border-slate-700/50 text-slate-100 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 focus:outline-none transition-all placeholder:text-slate-500 focus:bg-slate-900/80"
-              />
-
-              <AnimatePresence>
-                {searchQuery.length >= 2 && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 10 }}
-                    className="absolute left-0 right-0 mt-2 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl overflow-hidden z-30"
-                  >
-                    <div className="p-2 border-b border-slate-800 bg-slate-800/30">
-                      <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-2">
-                        Developers Found
-                      </p>
-                    </div>
-                    {foundUsers.length > 0 ? (
-                      foundUsers.map((u) => (
-                        <Link
-                          key={u.id}
-                          href={`/u/${u.username}`}
-                          className="flex items-center gap-3 p-3 hover:bg-slate-800 transition-colors border-b last:border-0 border-slate-800 group"
-                        >
-                          <div className="w-10 h-10 rounded-full overflow-hidden bg-slate-800 border border-slate-700 shrink-0">
-                            {u.avatar_url ? (
-                              <img
-                                src={u.avatar_url}
-                                alt={u.username}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center text-slate-500">
-                                <Users className="w-5 h-5" />
-                              </div>
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-bold text-slate-100 truncate group-hover:text-cyan-400 transition-colors">
-                              {u.display_name}
-                            </p>
-                            <p className="text-xs text-slate-500 truncate mb-1">
-                              @{u.username}
-                            </p>
-                            <div className="flex items-center gap-3">
-                              <div className="flex items-center gap-1 text-[10px] text-slate-500">
-                                <Code2 className="w-3 h-3" />
-                                <span className="font-medium text-slate-400">
-                                  {u.contekans?.[0]?.count || 0}
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-1 text-[10px] text-slate-500">
-                                <Users className="w-3 h-3" />
-                                <span className="font-medium text-slate-400">
-                                  {u.followers?.[0]?.count || 0}
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-1 text-[10px] text-slate-500">
-                                <UserPlus className="w-3 h-3" />
-                                <span className="font-medium text-slate-400">
-                                  {u.following?.[0]?.count || 0}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                          <ChevronRight className="w-4 h-4 text-slate-600 group-hover:text-cyan-400 group-hover:translate-x-1 transition-all" />
-                        </Link>
-                      ))
-                    ) : searchQuery.length >= 2 && !isSearchingUsers ? (
-                      <div className="p-4 text-center">
-                        <p className="text-xs text-slate-500">
-                          No developers found for "{searchQuery}"
-                        </p>
-                      </div>
-                    ) : null}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-
-            <div className="flex items-center gap-3 w-full md:w-auto">
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => setIsAddModalOpen(true)}
-                className="flex items-center gap-2 px-4 py-3 md:py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-medium shadow-lg shadow-cyan-500/25 hover:shadow-cyan-500/40 transition-all border border-cyan-400/20"
-              >
-                <Plus className="w-5 h-5" />
-                <span className="hidden sm:inline">Tambah Snippet</span>
-              </motion.button>
-
-              <div className="flex p-1 bg-slate-900/50 rounded-xl border border-slate-700/50 w-full md:w-auto justify-between md:justify-start">
-                <button
-                  onClick={() => setActiveFilter("terbaru")}
-                  className={`flex-1 md:flex-none px-4 py-2 text-sm font-medium rounded-lg transition-all ${activeFilter === "terbaru" ? "bg-slate-700 text-white shadow-lg shadow-cyan-900/20" : "text-slate-400 hover:text-slate-200 hover:bg-slate-800"}`}
-                >
-                  Terbaru
-                </button>
-                <button
-                  onClick={() => setActiveFilter("terlama")}
-                  className={`flex-1 md:flex-none px-4 py-2 text-sm font-medium rounded-lg transition-all ${activeFilter === "terlama" ? "bg-slate-700 text-white shadow-lg shadow-cyan-900/20" : "text-slate-400 hover:text-slate-200 hover:bg-slate-800"}`}
-                >
-                  Terlama
-                </button>
-              </div>
-
-              <div className="relative" ref={dropdownRef}>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  className="p-1 rounded-full bg-slate-900/50 border border-slate-700/50 hover:bg-slate-800 hover:border-cyan-500/30 transition-all text-slate-300 hover:shadow-lg hover:shadow-cyan-900/20 flex-shrink-0 relative overflow-hidden flex items-center justify-center w-12 h-12"
-                >
-                  {currentUser?.user_metadata?.avatar_url ? (
-                    <img
-                      src={currentUser.user_metadata.avatar_url}
-                      alt="Profile"
-                      className="w-full h-full object-cover rounded-full"
-                    />
-                  ) : (
-                    <User className="w-5 h-5 group-hover:text-cyan-400 text-slate-400" />
-                  )}
-                </motion.button>
-                <AnimatePresence>
-                  {isDropdownOpen && (
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                      animate={{ opacity: 1, scale: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                      className="absolute right-0 mt-2 w-48 bg-slate-900 border border-slate-700 rounded-xl shadow-xl overflow-hidden z-50 ring-1 ring-white/10"
-                    >
-                      {currentUser ? (
-                        <>
-                          <div className="px-4 py-3 border-b border-slate-800">
-                            <p className="text-sm font-semibold text-slate-200 truncate">
-                              {currentUser.user_metadata?.display_name ||
-                                "User"}
-                            </p>
-                            <p className="text-xs text-slate-500 truncate">
-                              @
-                              {currentUser.user_metadata?.username ||
-                                "username"}
-                            </p>
-                          </div>
-                          <Link
-                            href="/dashboard"
-                            className="flex items-center gap-2 px-4 py-3 text-sm text-slate-300 hover:bg-cyan-500/10 hover:text-cyan-400 transition-colors"
-                          >
-                            Dashboard
-                          </Link>
-                          {currentUserRole === "super_admin" && (
-                            <Link
-                              href="/super-admin"
-                              className="flex items-center gap-2 px-4 py-3 text-sm text-red-400 hover:bg-red-500/10 transition-colors border-t border-slate-800"
-                            >
-                              <ShieldAlert className="w-4 h-4" />
-                              Super Admin
-                            </Link>
-                          )}
-                        </>
-                      ) : (
-                        <>
-                          <Link
-                            href="/login"
-                            className="flex items-center gap-2 px-4 py-3 text-sm text-slate-300 hover:bg-cyan-500/10 hover:text-cyan-400 transition-colors"
-                          >
-                            Login
-                          </Link>
-                          <Link
-                            href="/register/admin"
-                            className="flex items-center gap-2 px-4 py-3 text-sm text-slate-300 hover:bg-cyan-500/10 hover:text-cyan-400 transition-colors"
-                          >
-                            Register
-                          </Link>
-                        </>
-                      )}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <main>
-          {isLoading ? (
-            <LoadingSpinner />
-          ) : (
-            <motion.div
-              variants={containerVariants}
-              initial="hidden"
-              animate="visible"
-              className="grid gap-4"
-            >
-              {sortedAndFilteredContekans.map((contekan) => (
-                <motion.div
-                  key={contekan.id}
-                  variants={itemVariants}
-                  layoutId={`card-${contekan.id}`}
-                  onClick={() => handleItemClick(contekan)}
-                  className="glass group p-6 rounded-2xl cursor-pointer hover:bg-slate-800/60 transition-all border border-slate-700/30 hover:border-cyan-500/50 relative overflow-hidden"
-                >
-                  <div className="relative z-10 flex items-start justify-between gap-4">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-3">
-                        <div className="p-1.5 rounded-lg bg-slate-800/50 text-cyan-400 border border-slate-700/50 group-hover:border-cyan-500/30 group-hover:scale-110 transition-all duration-300">
-                          <Code2 className="w-4 h-4" />
-                        </div>
-                        <h3 className="font-bold text-lg text-slate-100 truncate group-hover:text-cyan-300 transition-colors group-hover:text-glow">
-                          {contekan.judul}
-                        </h3>
-                      </div>
-                      <p className="text-sm text-slate-400 line-clamp-2 leading-relaxed pl-1">
-                        {contekan.deskripsi || "Tidak ada deskripsi."}
-                      </p>
-                      {contekan.profiles?.username && (
-                        <div className="mt-3 flex items-center gap-2">
-                          <Link
-                            href={`/u/${contekan.profiles.username}`}
-                            onClick={(e) => e.stopPropagation()}
-                            className="text-xs text-cyan-400 hover:text-cyan-300 transition-colors flex items-center gap-1 group/user"
-                          >
-                            <User className="w-3 h-3" />
-                            <span>@{contekan.profiles.username}</span>
-                          </Link>
-                        </div>
-                      )}
-                    </div>
-                    <div className="p-2 rounded-full bg-slate-800/30 text-slate-600 group-hover:text-cyan-400 group-hover:bg-cyan-500/10 transition-all duration-300 group-hover:translate-x-1">
-                      <ChevronRight className="w-5 h-5" />
-                    </div>
-                  </div>
-                  <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                  <div className="absolute inset-0 -translate-x-full group-hover:animate-shimmer z-0 pointer-events-none" />
-                </motion.div>
-              ))}
-            </motion.div>
-          )}
-          {!isLoading && sortedAndFilteredContekans.length === 0 && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="text-center py-20"
-            >
-              <div className="inline-flex p-4 rounded-full bg-slate-800/50 mb-4">
-                <Search className="w-8 h-8 text-slate-600" />
-              </div>
-              <h3 className="text-xl font-semibold text-slate-500">
-                Tidak ada hasil ditemukan
-              </h3>
-              <p className="text-slate-600 mt-2">Coba kata kunci lain</p>
-            </motion.div>
-          )}
-        </main>
-
-        <AnimatePresence>
-          {selectedContekan && (
-            <>
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                onClick={handleClosePanel}
-                className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
-              />
-              <motion.div
-                initial={{ x: "100%" }}
-                animate={{ x: 0 }}
-                exit={{ x: "100%" }}
-                transition={{ type: "spring", damping: 30, stiffness: 300 }}
-                className="fixed top-0 right-0 h-full w-full md:w-2/3 lg:w-1/2 glass-panel shadow-2xl z-50 flex flex-col"
-              >
-                <div className="p-4 sm:p-6 border-b border-slate-700/50 flex justify-between items-start bg-slate-900/40">
-                  <div>
-                    <motion.h2
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.2 }}
-                      className="text-xl sm:text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400"
-                    >
-                      {selectedContekan.judul}
-                    </motion.h2>
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: 0.3 }}
-                      className="flex flex-wrap items-center gap-3 sm:gap-4 mt-3 text-xs text-slate-500"
-                    >
-                      <span className="flex items-center gap-1">
-                        <Calendar className="w-3 h-3" />{" "}
-                        {new Date(
-                          selectedContekan.created_at,
-                        ).toLocaleDateString("id-ID", { dateStyle: "long" })}
-                      </span>
-                      {selectedContekan.profiles?.username ? (
-                        <Link
-                          href={`/u/${selectedContekan.profiles.username}`}
-                          className="flex items-center gap-1 hover:text-cyan-400 transition-colors"
-                        >
-                          <User className="w-3 h-3" /> @
-                          {selectedContekan.profiles.username}
-                        </Link>
-                      ) : (
-                        selectedContekan.user_display_name && (
-                          <span className="flex items-center gap-1">
-                            <User className="w-3 h-3" />{" "}
-                            {selectedContekan.user_display_name}
-                          </span>
-                        )
-                      )}
-                    </motion.div>
-                  </div>
-                  <button
-                    onClick={handleClosePanel}
-                    className="p-2 hover:bg-slate-800 rounded-lg transition-colors text-slate-400 hover:text-white"
-                  >
-                    <X className="w-6 h-6" />
-                  </button>
-                </div>
-
-                <div className="flex-1 overflow-y-auto p-6 space-y-6">
-                  {selectedContekan.deskripsi && (
-                    <div className="prose prose-invert max-w-none">
-                      <p className="text-slate-300 leading-relaxed text-sm md:text-base border-l-2 border-cyan-500/30 pl-4">
-                        {selectedContekan.deskripsi}
-                      </p>
-                    </div>
-                  )}
-
-                  {selectedContekan.file_content && (
-                    <div className="mb-6">
-                      {selectedContekan.file_content.match(
-                        /^data:image\/(png|jpg|jpeg|gif|webp);base64,/,
-                      ) ? (
-                        <div className="rounded-xl overflow-hidden border border-slate-700/50 shadow-lg">
-                          <img
-                            src={selectedContekan.file_content}
-                            alt="Attachment"
-                            className="w-full h-auto object-cover"
-                          />
-                        </div>
-                      ) : (
-                        <a
-                          href={selectedContekan.file_content}
-                          download="attachment"
-                          className="flex items-center gap-2 p-4 bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700 rounded-xl transition-all group"
-                        >
-                          <div className="p-2 bg-cyan-500/10 rounded-lg group-hover:bg-cyan-500/20 text-cyan-400">
-                            <FileText className="w-6 h-6" />
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium text-slate-200">
-                              Attached File
-                            </p>
-                            <p className="text-xs text-slate-400">
-                              Click to download
-                            </p>
-                          </div>
-                        </a>
-                      )}
-                    </div>
-                  )}
-                  <div className="glass rounded-xl overflow-hidden shadow-2xl border border-slate-700/50 relative group">
-                    <div className="flex items-center justify-between px-4 py-2 bg-slate-900/50 border-b border-slate-700/50">
-                      <div className="flex gap-1.5">
-                        <div className="w-3 h-3 rounded-full bg-red-500/20 box-border border-red-500/50" />
-                        <div className="w-3 h-3 rounded-full bg-yellow-500/20 box-border border-yellow-500/50" />
-                        <div className="w-3 h-3 rounded-full bg-green-500/20 box-border border-green-500/50" />
-                      </div>
-                      <button
-                        onClick={() => handleCopy(selectedContekan.isi)}
-                        className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold backdrop-blur-md transition-all duration-200 border ${
-                          copied
-                            ? "bg-green-500/20 border-green-500/50 text-green-400"
-                            : "bg-slate-800/60 border-slate-700 hover:bg-slate-700 text-slate-300"
-                        }`}
-                      >
-                        {copied ? (
-                          <Check className="w-3 h-3" />
-                        ) : (
-                          <Copy className="w-3 h-3" />
-                        )}
-                        {copied ? "Copied!" : "Copy Code"}
-                      </button>
-                    </div>
-                    <SyntaxHighlighter
-                      language="javascript"
-                      style={atomDark}
-                      customStyle={{
-                        margin: 0,
-                        padding: "1.5rem",
-                        background: "transparent",
-                        fontSize: "0.95rem",
-                        lineHeight: 1.6,
-                      }}
-                      showLineNumbers={true}
-                    >
-                      {selectedContekan.isi}
-                    </SyntaxHighlighter>
-                  </div>
-                </div>
-              </motion.div>
-            </>
-          )}
-        </AnimatePresence>
-
-        <AnimatePresence>
-          {isAddModalOpen && (
-            <>
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                onClick={() => !isSubmitting && setIsAddModalOpen(false)}
-                className="fixed inset-0 bg-black/60 backdrop-blur-md z-[60]"
-              />
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl bg-slate-900 border border-slate-700/50 rounded-2xl shadow-2xl z-[70] overflow-hidden flex flex-col max-h-[90vh]"
-              >
-                <div className="p-6 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
-                  <h2 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-blue-500">
-                    Tambah Snippet Baru
-                  </h2>
-                  <button
-                    onClick={() => !isSubmitting && setIsAddModalOpen(false)}
-                    disabled={isSubmitting}
-                    className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors disabled:opacity-50"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-                <div className="p-6 overflow-y-auto">
-                  <form
-                    id="add-snippet-form"
-                    onSubmit={handleAddSnippet}
-                    className="space-y-4"
-                  >
-                    <div>
-                      <label
-                        htmlFor="judul"
-                        className="block text-sm font-medium text-slate-300 mb-1.5"
-                      >
-                        Judul <span className="text-red-400">*</span>
-                      </label>
-                      <input
-                        id="judul"
-                        required
-                        type="text"
-                        placeholder="Contoh: Fetch Data API Next.js"
-                        value={newSnippet.judul}
-                        onChange={(e) =>
-                          setNewSnippet((prev) => ({
-                            ...prev,
-                            judul: e.target.value,
-                          }))
-                        }
-                        className="w-full px-4 py-2.5 rounded-xl bg-slate-950/50 border border-slate-700/50 text-slate-100 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none transition-all placeholder:text-slate-600"
-                      />
-                    </div>
-                    <div>
-                      <label
-                        htmlFor="deskripsi"
-                        className="block text-sm font-medium text-slate-300 mb-1.5"
-                      >
-                        Deskripsi
-                      </label>
-                      <textarea
-                        id="deskripsi"
-                        rows={2}
-                        placeholder="Penjelasan singkat mengenai snippet ini..."
-                        value={newSnippet.deskripsi}
-                        onChange={(e) =>
-                          setNewSnippet((prev) => ({
-                            ...prev,
-                            deskripsi: e.target.value,
-                          }))
-                        }
-                        className="w-full px-4 py-2.5 rounded-xl bg-slate-950/50 border border-slate-700/50 text-slate-100 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none transition-all placeholder:text-slate-600 resize-none"
-                      />
-                    </div>
-                    <div>
-                      <label
-                        htmlFor="isi"
-                        className="block text-sm font-medium text-slate-300 mb-1.5"
-                      >
-                        Kodingan <span className="text-red-400">*</span>
-                      </label>
-                      <textarea
-                        id="isi"
-                        required
-                        rows={8}
-                        placeholder="Paste kodingan kamu di sini..."
-                        value={newSnippet.isi}
-                        onChange={(e) =>
-                          setNewSnippet((prev) => ({
-                            ...prev,
-                            isi: e.target.value,
-                          }))
-                        }
-                        className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-700/50 text-slate-300 font-mono text-sm focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none transition-all placeholder:text-slate-600"
-                      />
-                    </div>
-                  </form>
-                </div>
-                <div className="p-6 border-t border-slate-800 bg-slate-900/50 flex justify-end gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setIsAddModalOpen(false)}
-                    disabled={isSubmitting}
-                    className="px-5 py-2.5 rounded-xl text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition-colors disabled:opacity-50"
-                  >
-                    Batal
-                  </button>
-                  <button
-                    form="add-snippet-form"
-                    type="submit"
-                    disabled={
-                      isSubmitting || !newSnippet.judul || !newSnippet.isi
-                    }
-                    className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-white text-sm font-medium shadow-lg hover:shadow-cyan-500/25 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />{" "}
-                        Menyimpan...
-                      </>
-                    ) : (
-                      <>
-                        <Check className="w-4 h-4" /> Simpan Snippet
-                      </>
-                    )}
-                  </button>
-                </div>
-              </motion.div>
-            </>
-          )}
-        </AnimatePresence>
+    <div className="min-h-screen bg-[#070e1a] text-slate-200 font-sans overflow-hidden selection:bg-cyan-500/30 selection:text-cyan-200">
+      {/* Dynamic Background Grid & Orbs */}
+      <div className="fixed inset-0 z-0 pointer-events-none">
+        <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-cyan-700/20 blur-[150px] rounded-full mix-blend-screen animate-pulse" />
+        <div className="absolute top-[20%] right-[-10%] w-[40%] h-[40%] bg-purple-700/20 blur-[150px] rounded-full mix-blend-screen animate-pulse" style={{ animationDelay: '2s' }} />
+        <div className="absolute bottom-[-20%] left-[20%] w-[50%] h-[50%] bg-blue-700/20 blur-[150px] rounded-full mix-blend-screen animate-pulse" style={{ animationDelay: '4s' }} />
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_80%,transparent_100%)]"></div>
+        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03] mix-blend-overlay"></div>
       </div>
+
+      {/* Navigation */}
+      <nav className="relative z-50 flex justify-between items-center px-6 py-8 max-w-7xl mx-auto">
+        <motion.div 
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.8 }}
+          className="flex items-center gap-3"
+        >
+          <div className="p-2.5 bg-slate-900/60 backdrop-blur-md rounded-2xl shadow-[0_0_30px_rgba(6,182,212,0.3)] border border-cyan-500/30 hover:border-cyan-400 group transition-all">
+            <Terminal className="w-7 h-7 text-cyan-400 group-hover:drop-shadow-[0_0_8px_rgba(6,182,212,0.8)]" />
+          </div>
+          <span className="text-2xl font-black tracking-tight text-white drop-shadow-md">CodeBy.</span>
+        </motion.div>
+        <motion.div 
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.8 }}
+        >
+          {!isChecking && (
+            user ? (
+              <button onClick={handleGetStarted} className="px-6 py-2.5 rounded-full text-sm font-bold bg-slate-800/80 hover:bg-slate-700/80 backdrop-blur-md border border-slate-700 transition-all text-slate-200 hover:text-white hover:border-cyan-500/50 hover:shadow-[0_0_20px_rgba(6,182,212,0.2)]">
+                Dashboard
+              </button>
+            ) : (
+              <button onClick={handleGetStarted} className="px-6 py-2.5 rounded-full text-sm font-bold bg-slate-800/80 hover:bg-slate-700/80 backdrop-blur-md border border-slate-700 transition-all text-slate-200 hover:text-white hover:border-cyan-500/50 hover:shadow-[0_0_20px_rgba(6,182,212,0.2)]">
+                Sign In
+              </button>
+            )
+          )}
+        </motion.div>
+      </nav>
+
+      {/* Extreme Hero Section */}
+      <main className="relative z-10 flex flex-col items-center justify-center min-h-[80vh] px-4 text-center mt-[-4rem]">
+        
+        {/* Subtle top pill */}
+        <motion.div
+           initial={{ opacity: 0, scale: 0.9, y: 20 }}
+           animate={{ opacity: 1, scale: 1, y: 0 }}
+           transition={{ duration: 0.8, type: "spring", bounce: 0.4 }}
+           className="p-1 px-4 rounded-full bg-slate-900/40 border border-cyan-500/20 backdrop-blur-xl mb-10 flex items-center gap-2 shadow-[0_0_30px_rgba(6,182,212,0.15)] group hover:border-cyan-500/50 transition-colors cursor-default mt-16"
+        >
+           <Sparkles className="w-4 h-4 text-cyan-400 group-hover:animate-pulse" />
+           <span className="text-sm font-semibold text-slate-300 drop-shadow-sm tracking-wide">
+             The Next Evolution of Developer Hubs
+           </span>
+        </motion.div>
+
+        {/* Massive Animated Typography */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.9, delay: 0.1 }}
+          className="relative"
+        >
+          <div className="absolute inset-0 bg-cyan-500/20 blur-[100px] rounded-full scale-150 -z-10" />
+          <h1 className="text-7xl sm:text-8xl lg:text-[10rem] font-black tracking-tighter leading-[1.1] mb-6">
+            <span className="block text-transparent bg-clip-text bg-gradient-to-b from-white via-slate-200 to-slate-500 drop-shadow-2xl">
+              Elevate Your
+            </span>
+            <span className="block text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 drop-shadow-[0_0_50px_rgba(6,182,212,0.4)] pb-4">
+              Development.
+            </span>
+          </h1>
+        </motion.div>
+
+        <motion.p 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.3 }}
+          className="max-w-2xl text-xl sm:text-2xl text-slate-400 font-light leading-relaxed mb-14 drop-shadow-md px-4"
+        >
+          A highly premium sanctuary for developers to store, share, and discover top-tier code snippets. Crafted for those who appreciate design.
+        </motion.p>
+
+        {/* Single "Get Started" Button replaces all others */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.5 }}
+          className="relative group"
+        >
+          <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-500 rounded-full blur-xl opacity-60 group-hover:opacity-100 transition-opacity duration-500 animate-pulse"></div>
+          <button 
+            onClick={handleGetStarted}
+            className="relative flex items-center justify-center gap-3 px-12 py-5 text-xl font-bold text-white rounded-full bg-slate-950 border border-white/10 hover:border-cyan-400/50 transition-all duration-300 shadow-[0_0_40px_rgba(0,0,0,0.8)] overflow-hidden"
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/20 to-purple-500/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out"></div>
+            <span className="relative z-10 drop-shadow-lg">Get Started</span> 
+            <ArrowRight className="w-6 h-6 relative z-10 group-hover:translate-x-1.5 transition-transform duration-300" />
+          </button>
+        </motion.div>
+
+        {/* Abstract 3D Floating UI Elements connected to "Code" */}
+        {/* Left Floating Card */}
+        <motion.div 
+           animate={{ y: [-30, 30, -30], rotate: [-4, 4, -4] }}
+           transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+           className="hidden xl:block absolute left-[5%] top-[25%] w-72 p-6 bg-slate-900/60 backdrop-blur-3xl border border-white/10 rounded-[2rem] shadow-[0_30px_60px_rgba(0,0,0,0.7)] z-0"
+        >
+           <div className="flex gap-2.5 mb-6">
+              <div className="w-3.5 h-3.5 rounded-full bg-red-500/80 shadow-[0_0_10px_rgba(239,68,68,0.5)]"></div>
+              <div className="w-3.5 h-3.5 rounded-full bg-yellow-500/80 shadow-[0_0_10px_rgba(234,179,8,0.5)]"></div>
+              <div className="w-3.5 h-3.5 rounded-full bg-green-500/80 shadow-[0_0_10px_rgba(34,197,94,0.5)]"></div>
+           </div>
+           <div className="space-y-4">
+             <div className="h-3 w-5/6 bg-slate-700/60 rounded-full"></div>
+             <div className="h-3 w-2/3 bg-cyan-500/60 rounded-full shadow-[0_0_15px_rgba(6,182,212,0.5)]"></div>
+             <div className="h-3 w-full bg-slate-700/60 rounded-full"></div>
+             <div className="h-3 w-4/5 bg-purple-500/60 rounded-full"></div>
+           </div>
+        </motion.div>
+
+        {/* Right Floating Card */}
+        <motion.div 
+           animate={{ y: [30, -30, 30], rotate: [4, -4, 4] }}
+           transition={{ duration: 12, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+           className="hidden xl:block absolute right-[5%] top-[35%] w-80 p-6 bg-slate-900/60 backdrop-blur-3xl border border-white/10 rounded-[2rem] shadow-[0_30px_60px_rgba(0,0,0,0.7)] z-0"
+        >
+           <div className="flex items-center gap-4 mb-6">
+             <div className="p-4 bg-purple-500/10 rounded-2xl border border-purple-500/20"><LayoutTemplate className="w-8 h-8 text-purple-400" /></div>
+             <div>
+               <div className="h-2.5 w-24 bg-slate-300/80 rounded-full mb-2.5"></div>
+               <div className="h-2.5 w-16 bg-slate-500/50 rounded-full"></div>
+             </div>
+           </div>
+           <div className="p-5 bg-slate-950/60 rounded-2xl border border-white/5">
+             <div className="h-2 w-full bg-slate-700/50 rounded-full mb-3"></div>
+             <div className="h-2 w-full bg-slate-700/50 rounded-full mb-3"></div>
+             <div className="h-2 w-4/5 bg-slate-700/50 rounded-full"></div>
+           </div>
+        </motion.div>
+
+      </main>
+
+      {/* Feature Highlights Grid */}
+      <section className="relative z-10 max-w-7xl mx-auto px-6 py-32 mt-10">
+         <div className="text-center mb-20 relative">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[100px] bg-blue-500/10 blur-[60px] rounded-full pointer-events-none -z-10" />
+            <h2 className="text-4xl sm:text-5xl lg:text-6xl font-black bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400 drop-shadow-sm mb-6">
+              Engineering Brilliance.
+            </h2>
+            <p className="text-slate-400 text-lg sm:text-xl max-w-2xl mx-auto leading-relaxed">
+              CodeBy strips away the noise and focuses entirely on a majestic experience for your technical workflow.
+            </p>
+         </div>
+         
+         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <motion.div 
+               whileHover={{ y: -12, scale: 1.02 }}
+               transition={{ type: "spring", stiffness: 300, damping: 20 }}
+               className="p-10 rounded-[2.5rem] bg-slate-900/40 border border-slate-700/50 backdrop-blur-2xl hover:border-cyan-500/40 hover:bg-slate-800/60 transition-all shadow-[0_20px_40px_rgba(0,0,0,0.5)] hover:shadow-[0_20px_50px_rgba(6,182,212,0.15)] group relative overflow-hidden"
+            >
+               <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/10 rounded-full blur-3xl group-hover:bg-cyan-500/20 transition-all duration-500"></div>
+               <div className="w-16 h-16 bg-cyan-500/10 rounded-2xl flex items-center justify-center mb-8 group-hover:scale-110 transition-transform shadow-inner border border-cyan-500/20 relative z-10">
+                  <Zap className="w-8 h-8 text-cyan-400 drop-shadow-[0_0_8px_rgba(6,182,212,0.8)]" />
+               </div>
+               <h3 className="text-2xl font-bold text-slate-100 mb-4 relative z-10">Hyper Optimized</h3>
+               <p className="text-slate-400 leading-relaxed font-medium relative z-10">
+                 Instantly save and retrieve your snippets. Our tailored architecture ensures your workflow never slows down, loading faster than your thoughts.
+               </p>
+            </motion.div>
+
+            <motion.div 
+               whileHover={{ y: -12, scale: 1.02 }}
+               transition={{ type: "spring", stiffness: 300, damping: 20 }}
+               className="p-10 rounded-[2.5rem] bg-slate-900/40 border border-slate-700/50 backdrop-blur-2xl hover:border-purple-500/40 hover:bg-slate-800/60 transition-all shadow-[0_20px_40px_rgba(0,0,0,0.5)] hover:shadow-[0_20px_50px_rgba(168,85,247,0.15)] group relative overflow-hidden"
+            >
+               <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 rounded-full blur-3xl group-hover:bg-purple-500/20 transition-all duration-500"></div>
+               <div className="w-16 h-16 bg-purple-500/10 rounded-2xl flex items-center justify-center mb-8 group-hover:scale-110 transition-transform shadow-inner border border-purple-500/20 relative z-10">
+                  <LayoutTemplate className="w-8 h-8 text-purple-400 drop-shadow-[0_0_8px_rgba(168,85,247,0.8)]" />
+               </div>
+               <h3 className="text-2xl font-bold text-slate-100 mb-4 relative z-10">Glass UI Design</h3>
+               <p className="text-slate-400 leading-relaxed font-medium relative z-10">
+                 Experience an interface crafted with extreme attention to detail. Layered glassmorphism, fluid micro-animations, and masterful typography.
+               </p>
+            </motion.div>
+
+            <motion.div 
+               whileHover={{ y: -12, scale: 1.02 }}
+               transition={{ type: "spring", stiffness: 300, damping: 20 }}
+               className="p-10 rounded-[2.5rem] bg-slate-900/40 border border-slate-700/50 backdrop-blur-2xl hover:border-blue-500/40 hover:bg-slate-800/60 transition-all shadow-[0_20px_40px_rgba(0,0,0,0.5)] hover:shadow-[0_20px_50px_rgba(59,130,246,0.15)] group relative overflow-hidden"
+            >
+               <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl group-hover:bg-blue-500/20 transition-all duration-500"></div>
+               <div className="w-16 h-16 bg-blue-500/10 rounded-2xl flex items-center justify-center mb-8 group-hover:scale-110 transition-transform shadow-inner border border-blue-500/20 relative z-10">
+                  <ShieldCheck className="w-8 h-8 text-blue-400 drop-shadow-[0_0_8px_rgba(59,130,246,0.8)]" />
+               </div>
+               <h3 className="text-2xl font-bold text-slate-100 mb-4 relative z-10">Military Security</h3>
+               <p className="text-slate-400 leading-relaxed font-medium relative z-10">
+                 Your intellectual property is fortified. RLS security rules directly integrated with Supabase keep your code isolated and perfectly safe.
+               </p>
+            </motion.div>
+         </div>
+      </section>
+
+      {/* Futuristic Footer */}
+      <footer className="relative z-10 border-t border-slate-800/50 py-10 mt-10 bg-slate-950/40 backdrop-blur-xl">
+        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4">
+           <div className="flex items-center gap-2">
+             <Terminal className="w-5 h-5 text-cyan-400" />
+             <span className="text-lg font-bold text-slate-200">CodeBy.</span>
+           </div>
+           <p className="text-slate-500 text-sm font-medium">© 2026 CodeBy. For developers, by developers.</p>
+        </div>
+      </footer>
     </div>
   );
 }

@@ -238,29 +238,35 @@ export default function UserProfilePage({
           <span>Back to Home</span>
         </Link>
 
-        <div className="glass rounded-3xl border border-slate-700/50 overflow-hidden shadow-2xl bg-slate-900/40 p-8 mb-8">
-          <div className="flex flex-col md:flex-row items-center gap-8">
-            <div className="relative group shrink-0">
-              <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-slate-800 bg-slate-800 flex items-center justify-center relative">
-                {profile.avatar_url ? (
-                  <img
-                    src={profile.avatar_url}
-                    alt={profile.display_name}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <UserIcon className="w-16 h-16 text-slate-500" />
-                )}
-              </div>
-            </div>
+        <div className="rounded-3xl border border-slate-700/50 overflow-hidden shadow-[0_20px_40px_rgba(0,0,0,0.6)] bg-slate-900/60 backdrop-blur-3xl mb-10 relative">
+          {/* Banner */}
+          <div className="h-32 sm:h-48 w-full bg-gradient-to-r from-cyan-900/40 via-blue-900/40 to-purple-900/40 border-b border-slate-800/60 relative overflow-hidden">
+             <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.05] mix-blend-overlay"></div>
+             <div className="absolute top-1/2 left-1/4 w-[200px] h-[200px] bg-cyan-500/20 blur-[60px] rounded-full pointer-events-none -translate-y-1/2" />
+          </div>
 
-            <div className="flex-1 text-center md:text-left">
-              <div className="flex flex-col md:flex-row md:items-center gap-4 mb-4">
-                <div>
-                  <h1 className="text-3xl font-bold text-white mb-1">
+          <div className="px-6 pb-8 sm:px-10 sm:pb-10 relative">
+            <div className="flex flex-col md:flex-row items-center md:items-end gap-6 sm:gap-8 -mt-16 sm:-mt-20 mb-6 sm:mb-8">
+              <div className="relative group shrink-0">
+                <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-full overflow-hidden border-4 border-slate-900 bg-slate-800 flex items-center justify-center relative shadow-2xl">
+                  {profile.avatar_url ? (
+                    <img
+                      src={profile.avatar_url}
+                      alt={profile.display_name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <UserIcon className="w-16 h-16 sm:w-20 sm:h-20 text-slate-500" />
+                  )}
+                </div>
+              </div>
+
+              <div className="flex flex-col md:flex-row md:items-end gap-4 flex-1 w-full justify-between">
+                <div className="text-center md:text-left">
+                  <h1 className="text-3xl sm:text-4xl font-extrabold text-white mb-1 tracking-tight">
                     {profile.display_name}
                   </h1>
-                  <p className="text-cyan-400 font-medium text-lg">
+                  <p className="text-cyan-400 font-semibold text-lg flex items-center justify-center md:justify-start gap-1">
                     @{profile.username}
                   </p>
                 </div>
@@ -269,10 +275,10 @@ export default function UserProfilePage({
                   <button
                     onClick={handleFollow}
                     disabled={isFollowLoading}
-                    className={`ml-auto px-6 py-2.5 rounded-xl font-bold transition-all flex items-center gap-2 ${
+                    className={`shrink-0 w-full md:w-auto px-8 py-3 rounded-2xl font-bold transition-all flex items-center justify-center md:justify-start gap-2 ${
                       isFollowing
-                        ? "bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700"
-                        : "bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white shadow-lg shadow-cyan-900/40 border border-cyan-400/20"
+                        ? "bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700 shadow-md"
+                        : "bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white shadow-[0_0_20px_rgba(6,182,212,0.3)] hover:shadow-[0_0_30px_rgba(6,182,212,0.4)] transition-all"
                     }`}
                   >
                     {isFollowLoading ? (
@@ -289,42 +295,44 @@ export default function UserProfilePage({
                   </button>
                 )}
               </div>
+            </div>
 
-              {profile.bio && (
-                <p className="text-slate-400 max-w-2xl mb-6">{profile.bio}</p>
-              )}
+            {profile.bio && (
+              <p className="text-slate-300 max-w-2xl mb-8 text-center md:text-left leading-relaxed text-sm sm:text-base border-l-2 border-cyan-500/30 pl-4">
+                {profile.bio}
+              </p>
+            )}
 
-              <div className="flex items-center justify-center md:justify-start gap-8 border-t border-slate-800/60 pt-6">
-                <button
-                  onClick={() => fetchFollowList("followers")}
-                  className="text-center md:text-left hover:bg-slate-800/40 p-2 rounded-xl transition-colors group/stat"
-                >
-                  <p className="text-2xl font-bold text-white group-hover/stat:text-cyan-400 transition-colors">
-                    {followersCount}
-                  </p>
-                  <p className="text-xs text-slate-500 uppercase tracking-wider mt-1">
-                    Followers
-                  </p>
-                </button>
-                <button
-                  onClick={() => fetchFollowList("following")}
-                  className="text-center md:text-left hover:bg-slate-800/40 p-2 rounded-xl transition-colors group/stat"
-                >
-                  <p className="text-2xl font-bold text-white group-hover/stat:text-cyan-400 transition-colors">
-                    {followingCount}
-                  </p>
-                  <p className="text-xs text-slate-500 uppercase tracking-wider mt-1">
-                    Following
-                  </p>
-                </button>
-                <div className="text-center md:text-left p-2">
-                  <p className="text-2xl font-bold text-white">
-                    {contekans.length}
-                  </p>
-                  <p className="text-xs text-slate-500 uppercase tracking-wider mt-1">
-                    Snippets
-                  </p>
-                </div>
+            <div className="flex justify-center md:justify-start gap-6 sm:gap-12 border-t border-slate-700/50 pt-8 mt-2">
+              <button
+                onClick={() => fetchFollowList("followers")}
+                className="text-center hover:bg-slate-800/40 p-3 rounded-2xl transition-all group/stat min-w-[100px]"
+              >
+                <p className="text-3xl font-black text-white group-hover/stat:text-cyan-400 transition-colors">
+                  {followersCount}
+                </p>
+                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest mt-1">
+                  Followers
+                </p>
+              </button>
+              <button
+                onClick={() => fetchFollowList("following")}
+                className="text-center hover:bg-slate-800/40 p-3 rounded-2xl transition-all group/stat min-w-[100px]"
+              >
+                <p className="text-3xl font-black text-white group-hover/stat:text-cyan-400 transition-colors">
+                  {followingCount}
+                </p>
+                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest mt-1">
+                  Following
+                </p>
+              </button>
+              <div className="text-center p-3 min-w-[100px]">
+                <p className="text-3xl font-black text-white">
+                  {contekans.length}
+                </p>
+                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest mt-1">
+                  Snippets
+                </p>
               </div>
             </div>
           </div>
@@ -343,7 +351,7 @@ export default function UserProfilePage({
                   key={c.id}
                   layoutId={c.id}
                   onClick={() => setSelectedSnippet(c)}
-                  className="glass group p-6 rounded-2xl cursor-pointer hover:bg-slate-800/60 transition-all border border-slate-700/30 hover:border-cyan-500/50 relative overflow-hidden"
+                  className="group p-6 rounded-3xl cursor-pointer bg-slate-900/40 hover:bg-slate-800/60 backdrop-blur-xl border border-slate-800 hover:border-cyan-500/40 hover:shadow-[0_0_30px_rgba(6,182,212,0.1)] transition-all duration-300 relative overflow-hidden"
                 >
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex-1 min-w-0">

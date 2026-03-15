@@ -332,11 +332,13 @@ export default function SuperAdminPage() {
       </AnimatePresence>
 
       <aside
-        className={`fixed md:static inset-y-0 left-0 z-50 w-64 bg-slate-900 border-r border-slate-800 flex flex-col pt-8 transition-transform duration-300 ease-in-out ${
+        className={`fixed md:static inset-y-0 left-0 z-50 w-64 bg-slate-900/60 backdrop-blur-2xl border-r border-slate-800/60 flex flex-col pt-8 transition-transform duration-300 ease-in-out ${
           isSidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         }`}
       >
-        <div className="px-6 mb-10 flex items-center justify-between">
+        {/* Decorative Sidebar Glow */}
+        <div className="absolute top-0 left-0 w-32 h-32 bg-red-500/10 blur-[40px] rounded-full pointer-events-none -z-10" />
+        <div className="px-6 mb-10 flex items-center justify-between relative z-10">
           <div>
             <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-red-500 to-orange-500 flex items-center gap-2">
               <ShieldAlert className="w-6 h-6 text-red-500" />
@@ -437,35 +439,42 @@ export default function SuperAdminPage() {
                 exit={{ opacity: 0, y: -10 }}
                 className="grid grid-cols-1 md:grid-cols-3 gap-6"
               >
-                <div className="bg-slate-900/50 border border-slate-800 p-8 rounded-3xl">
-                  <div className="w-12 h-12 bg-cyan-500/10 rounded-2xl flex items-center justify-center mb-4">
-                    <Users className="w-6 h-6 text-cyan-400" />
+                <div className="rounded-3xl border border-slate-700/50 overflow-hidden shadow-[0_8px_30px_rgba(0,0,0,0.3)] bg-slate-900/50 backdrop-blur-xl p-8 relative flex flex-col items-start justify-between group transition-all hover:-translate-y-1 hover:shadow-[0_8px_30px_rgba(6,182,212,0.15)]">
+                  <div className="w-14 h-14 bg-cyan-500/10 rounded-2xl flex items-center justify-center mb-6 shadow-inner border border-cyan-500/20 group-hover:scale-110 transition-transform">
+                    <Users className="w-7 h-7 text-cyan-400" />
                   </div>
-                  <h3 className="text-slate-400 font-medium">Total Users</h3>
-                  <p className="text-4xl font-bold text-white mt-1">
-                    {stats.totalUsers}
-                  </p>
+                  <div>
+                    <h3 className="text-slate-400 font-bold tracking-wide uppercase text-xs mb-2">Total Users</h3>
+                    <p className="text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-400">
+                      {stats.totalUsers}
+                    </p>
+                  </div>
                 </div>
-                <div className="bg-slate-900/50 border border-slate-800 p-8 rounded-3xl">
-                  <div className="w-12 h-12 bg-purple-500/10 rounded-2xl flex items-center justify-center mb-4">
-                    <Code2 className="w-6 h-6 text-purple-400" />
+                <div className="rounded-3xl border border-slate-700/50 overflow-hidden shadow-[0_8px_30px_rgba(0,0,0,0.3)] bg-slate-900/50 backdrop-blur-xl p-8 relative flex flex-col items-start justify-between group transition-all hover:-translate-y-1 hover:shadow-[0_8px_30px_rgba(168,85,247,0.15)]">
+                  <div className="w-14 h-14 bg-purple-500/10 rounded-2xl flex items-center justify-center mb-6 shadow-inner border border-purple-500/20 group-hover:scale-110 transition-transform">
+                    <Code2 className="w-7 h-7 text-purple-400" />
                   </div>
-                  <h3 className="text-slate-400 font-medium">Total Snippets</h3>
-                  <p className="text-4xl font-bold text-white mt-1">
-                    {stats.totalSnippets}
-                  </p>
+                  <div>
+                    <h3 className="text-slate-400 font-bold tracking-wide uppercase text-xs mb-2">Total Snippets</h3>
+                    <p className="text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-400">
+                      {stats.totalSnippets}
+                    </p>
+                  </div>
                 </div>
-                <div className="bg-slate-900/50 border border-slate-800 p-8 rounded-3xl">
-                  <div className="w-12 h-12 bg-orange-500/10 rounded-2xl flex items-center justify-center mb-4">
-                    <ShieldCheck className="w-6 h-6 text-orange-400" />
+                <div className="rounded-3xl border border-slate-700/50 overflow-hidden shadow-[0_8px_30px_rgba(0,0,0,0.3)] bg-slate-900/50 backdrop-blur-xl p-8 relative flex flex-col items-start justify-between group transition-all hover:-translate-y-1 hover:shadow-[0_8px_30px_rgba(249,115,22,0.15)]">
+                  <div className="w-14 h-14 bg-orange-500/10 rounded-2xl flex items-center justify-center mb-6 shadow-inner border border-orange-500/20 group-hover:scale-110 transition-transform">
+                    <ShieldCheck className="w-7 h-7 text-orange-400" />
                   </div>
-                  <h3 className="text-slate-400 font-medium">Social Follows</h3>
-                  <p className="text-4xl font-bold text-white mt-1">
-                    {stats.totalFollows}
-                  </p>
+                  <div>
+                    <h3 className="text-slate-400 font-bold tracking-wide uppercase text-xs mb-2">Social Follows</h3>
+                    <p className="text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-400">
+                      {stats.totalFollows}
+                    </p>
+                  </div>
                 </div>
 
-                <div className="md:col-span-3 bg-gradient-to-br from-indigo-500/10 to-blue-500/10 border border-blue-500/20 p-8 rounded-3xl mt-4">
+                <div className="md:col-span-3 rounded-3xl border border-blue-500/30 overflow-hidden shadow-[0_8px_30px_rgba(59,130,246,0.15)] bg-gradient-to-br from-indigo-900/40 to-blue-900/20 backdrop-blur-xl p-8 lg:p-10 relative mt-4">
+                  <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 blur-[80px] rounded-full pointer-events-none -z-10" />
                   <h3 className="text-xl font-bold text-white mb-2">
                     Welcome, Super Admin
                   </h3>
@@ -491,7 +500,7 @@ export default function SuperAdminPage() {
                     <input
                       type="text"
                       placeholder="Cari user (id, username, email)..."
-                      className="w-full bg-slate-900 border border-slate-800 rounded-xl py-2 pl-10 pr-4 focus:ring-2 focus:ring-cyan-500/50 outline-none transition-all"
+                      className="w-full bg-slate-900/60 border border-slate-700/60 rounded-xl py-2.5 pl-11 pr-4 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none transition-all text-slate-200 shadow-inner"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                     />
@@ -504,7 +513,7 @@ export default function SuperAdminPage() {
                   </button>
                 </div>
 
-                <div className="bg-slate-900/50 border border-slate-800 rounded-3xl overflow-hidden overflow-x-auto">
+                <div className="rounded-3xl border border-slate-700/50 overflow-hidden shadow-[0_20px_40px_rgba(0,0,0,0.4)] bg-slate-900/60 backdrop-blur-3xl overflow-x-auto relative">
                   <table className="w-full text-left">
                     <thead>
                       <tr className="border-b border-slate-800 bg-slate-800/30">
