@@ -66,6 +66,7 @@ export default function UserProfilePage({
   const [contekans, setContekans] = useState<Contekan[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
 
   const [isFollowing, setIsFollowing] = useState(false);
   const [followersCount, setFollowersCount] = useState(0);
@@ -92,6 +93,15 @@ export default function UserProfilePage({
         data: { user: authedUser },
       } = await supabase.auth.getUser();
       setCurrentUser(authedUser);
+
+      if (authedUser) {
+        const { data: roleData } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", authedUser.id)
+          .single();
+        if (roleData) setCurrentUserRole(roleData.role);
+      }
 
       const { data: profileData, error: profileError } = await supabase
         .from("profiles")
@@ -345,7 +355,11 @@ export default function UserProfilePage({
               </button>
               <div className="text-center p-3 min-w-[100px]">
                 <p className="text-3xl font-black text-white">
-                  {contekans.length}
+                  {contekans.filter(c => 
+                    !c.is_private || 
+                    (currentUser && currentUser.id === profile?.id) || 
+                    currentUserRole === 'super_admin'
+                  ).length}
                 </p>
                 <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest mt-1">
                   Snippets
@@ -361,9 +375,20 @@ export default function UserProfilePage({
             Public Snippets
           </h2>
 
-          {contekans.length > 0 ? (
-            <div className="grid gap-4">
-              {contekans.map((c) => (
+          <AnimatePresence mode="popLayout">
+            {contekans.filter(c => 
+                !c.is_private || 
+                (currentUser && currentUser.id === profile?.id) || 
+                currentUserRole === 'super_admin'
+              ).length > 0 ? (
+              <div className="grid gap-4">
+                {contekans
+                  .filter(c => 
+                    !c.is_private || 
+                    (currentUser && currentUser.id === profile?.id) || 
+                    currentUserRole === 'super_admin'
+                  )
+                  .map((c) => (
                 <motion.div
                   key={c.id}
                   layoutId={c.id}
@@ -399,16 +424,17 @@ export default function UserProfilePage({
                     <ChevronRight className="w-5 h-5 text-slate-600 group-hover:text-cyan-400 transition-colors group-hover:translate-x-1" />
                   </div>
                 </motion.div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-20 bg-slate-900/20 rounded-3xl border border-dashed border-slate-800">
-              <Code2 className="w-12 h-12 text-slate-700 mx-auto mb-4" />
-              <p className="text-slate-500">
-                This user hasn't posted any snippets yet.
-              </p>
-            </div>
-          )}
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-20 bg-slate-900/20 rounded-3xl border border-dashed border-slate-800 w-full">
+                <Code2 className="w-12 h-12 text-slate-700 mx-auto mb-4" />
+                <p className="text-slate-500">
+                  This user hasn't posted any public snippets yet.
+                </p>
+              </div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
 

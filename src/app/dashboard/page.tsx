@@ -343,11 +343,17 @@ export default function DashboardPage() {
     );
     if (filter === "mine" && user) {
       filtered = filtered.filter((c) => c.user_id === user.id);
+    } else {
+      // In "all" view, filter out private snippets that don't belong to the current user
+      // and if the current user is not a super admin
+      filtered = filtered.filter((c) => 
+        !c.is_private || 
+        (user && c.user_id === user.id) || 
+        userRole === "super_admin"
+      );
     }
-    // RLS will handle most of this, but it's good to have local filtering logic if needed
-    // especially for "all" view where we only want to see public ones OR our own
     return filtered;
-  }, [contekans, searchQuery, filter, user]);
+  }, [contekans, searchQuery, filter, user, userRole]);
 
   const handleLogout = async () => {
     try {
