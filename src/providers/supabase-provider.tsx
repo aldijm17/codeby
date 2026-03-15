@@ -18,8 +18,6 @@ export default function SupabaseProvider({
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event) => {
-      // Whenever the user logs in or out, automatically refresh the Next.js router
-      // This ensures server components and middleware have the latest session cookies
       if (event === "SIGNED_IN" || event === "SIGNED_OUT") {
         router.refresh();
       }
