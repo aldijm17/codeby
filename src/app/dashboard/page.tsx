@@ -124,7 +124,6 @@ export default function DashboardPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
 
-  // Social Search States
   const [foundUsers, setFoundUsers] = useState<any[]>([]);
   const [isSearchingUsers, setIsSearchingUsers] = useState(false);
 
@@ -182,7 +181,7 @@ export default function DashboardPage() {
               display_name: displayName,
               avatar_url: user.user_metadata?.avatar_url || "",
               email: user.email,
-              is_approved: true, // We removed the manual approval
+              is_approved: true,
             })
             .select("role")
             .single();
@@ -197,14 +196,12 @@ export default function DashboardPage() {
         console.error("Critical Profile Error:", err);
       }
 
-      // Juga update metadata jika username belum ada agar konsisten
       if (!user.user_metadata?.username) {
         await supabase.auth.updateUser({
           data: { username, display_name: displayName },
         });
       }
 
-      // Social Stats
       const { count: followers } = await supabase
         .from("follows")
         .select("*", { count: "exact", head: true })
@@ -237,7 +234,6 @@ export default function DashboardPage() {
     initialize();
   }, [router]);
 
-  // Social Search Effect
   useEffect(() => {
     const searchUsers = async () => {
       const trimmedQuery = searchQuery.trim();
@@ -339,7 +335,6 @@ export default function DashboardPage() {
     } catch (error) {
       console.error("Logout error, forcing clear session", error);
     } finally {
-      // Force clear local storage to ensure the user is actually un-authenticated on the client
       localStorage.removeItem("supabase.auth.token");
       localStorage.clear();
       router.push("/");
@@ -367,7 +362,7 @@ export default function DashboardPage() {
       file: null,
       language: contekan.language || "javascript",
       tags: contekan.tags ? contekan.tags.join(", ") : "",
-    }); // Don't carry over file object, but keep url
+    });
     setViewMode("edit");
   };
 
@@ -381,7 +376,6 @@ export default function DashboardPage() {
 
       if (formState.file) {
         if (formState.file.size > 5 * 1024 * 1024) {
-          // 5MB limit
           throw new Error(
             "File terlalu besar! Maksimal 5MB untuk bucket penyimpanan.",
           );
@@ -507,12 +501,9 @@ export default function DashboardPage() {
     );
   }
 
-  // Removed Account Pending Screen
-
   return (
     <>
       <div className="flex h-screen overflow-hidden bg-[#0f172a]">
-        {/* Sidebar Overlay for Mobile */}
         <AnimatePresence>
           {isSidebarOpen && (
             <motion.div
@@ -525,7 +516,6 @@ export default function DashboardPage() {
           )}
         </AnimatePresence>
 
-        {/* Sidebar */}
         <motion.aside
           className={`fixed md:relative w-72 h-full bg-slate-900 border-r border-slate-800 flex flex-col z-40 md:translate-x-0 transition-transform duration-300 ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}`}
         >
@@ -575,8 +565,6 @@ export default function DashboardPage() {
             >
               View Public Profile
             </Link>
-
-            {/* Removed Super Admin button from here for cleaner head section */}
           </header>
           <div className="p-4 space-y-4">
             <button
@@ -615,7 +603,6 @@ export default function DashboardPage() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-focus-within:text-cyan-400 transition-colors" />
             </div>
 
-            {/* User Search Results in Dashboard Sidebar */}
             {searchQuery.length >= 2 && (
               <div className="space-y-2 mt-2">
                 <div className="flex items-center gap-2 px-1 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
@@ -766,9 +753,7 @@ export default function DashboardPage() {
           </div>
         </motion.aside>
 
-        {/* Main Content */}
         <main className="flex-1 flex flex-col h-full overflow-hidden relative">
-          {/* Mobile Header */}
           <div className="md:hidden p-4 border-b border-slate-800 flex items-center justify-between glass sticky top-0 z-20">
             <button
               onClick={() => setIsSidebarOpen(true)}
@@ -777,7 +762,7 @@ export default function DashboardPage() {
               <Menu className="w-6 h-6" />
             </button>
             <h1 className="font-bold text-slate-100">Dashboard</h1>
-            <div className="w-10" /> {/* Spacer */}
+            <div className="w-10" />
           </div>
 
           <div className="flex-1 overflow-y-auto p-4 sm:p-8 custom-scrollbar">
@@ -1029,7 +1014,6 @@ export default function DashboardPage() {
                             onChange={async (e) => {
                               const file = e.target.files?.[0];
                               if (file) {
-                                // Upload logic here could be separate, but handling in state for submit is easier
                                 setFormState({ ...formState, file: file });
                               }
                             }}

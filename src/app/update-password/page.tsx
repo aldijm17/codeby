@@ -41,7 +41,6 @@ export default function UpdatePasswordPage() {
 
   return (
     <div className="flex justify-center items-center min-h-screen p-4 relative overflow-hidden">
-      {/* Decorative Background Elements */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-purple-500/10 blur-[100px] rounded-full pointer-events-none -z-10" />
 
       <motion.div

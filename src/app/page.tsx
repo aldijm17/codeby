@@ -67,18 +67,16 @@ export default function Home() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // User Session State
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
 
-  // Add Snippet State
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [newSnippet, setNewSnippet] = useState({
     judul: "",
     deskripsi: "",
     isi: "",
-    user_display_name: "Guest", // Default value for now
+    user_display_name: "Guest",
   });
 
   useEffect(() => {
@@ -98,14 +96,12 @@ export default function Home() {
     };
     fetchContekans();
 
-    // Fetch Current User
     const fetchUser = async () => {
       const {
         data: { user },
       } = await supabase.auth.getUser();
       if (user) {
         setCurrentUser(user);
-        // Fetch role
         const { data: profile } = await supabase
           .from("profiles")
           .select("role")
@@ -134,7 +130,6 @@ export default function Home() {
     };
   }, [dropdownRef]);
 
-  // Social States
   const [foundUsers, setFoundUsers] = useState<any[]>([]);
   const [isSearchingUsers, setIsSearchingUsers] = useState(false);
 
@@ -174,7 +169,6 @@ export default function Home() {
         setFoundUsers(data || []);
       } catch (err) {
         console.warn("Retrying basic search due to error:", err);
-        // Fallback to basic search if counts fail due to relationship issues
         const { data, error } = await supabase
           .from("profiles")
           .select("*")
@@ -279,7 +273,6 @@ export default function Home() {
     }
   };
 
-  // Animation Variants
   const containerVariants: Variants = {
     hidden: { opacity: 0 },
     visible: {
@@ -304,7 +297,6 @@ export default function Home() {
       <Toaster position="bottom-right" />
       <div className="max-w-5xl mx-auto">
         <header className="mb-12 text-center relative pointer-events-none">
-          {/* Decorative Elements */}
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[200px] bg-cyan-500/20 blur-[100px] rounded-full pointer-events-none -z-10 animate-pulse" />
 
           <motion.div
@@ -346,7 +338,6 @@ export default function Home() {
                 className="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-900/50 border border-slate-700/50 text-slate-100 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 focus:outline-none transition-all placeholder:text-slate-500 focus:bg-slate-900/80"
               />
 
-              {/* User Search Results Dropdown */}
               <AnimatePresence>
                 {searchQuery.length >= 2 && (
                   <motion.div
@@ -387,7 +378,6 @@ export default function Home() {
                             <p className="text-xs text-slate-500 truncate mb-1">
                               @{u.username}
                             </p>
-                            {/* User Stats in Search */}
                             <div className="flex items-center gap-3">
                               <div className="flex items-center gap-1 text-[10px] text-slate-500">
                                 <Code2 className="w-3 h-3" />
@@ -577,7 +567,6 @@ export default function Home() {
                     </div>
                   </div>
                   <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                  {/* Shimmer overlay */}
                   <div className="absolute inset-0 -translate-x-full group-hover:animate-shimmer z-0 pointer-events-none" />
                 </motion.div>
               ))}
@@ -751,7 +740,6 @@ export default function Home() {
           )}
         </AnimatePresence>
 
-        {/* Add Snippet Modal */}
         <AnimatePresence>
           {isAddModalOpen && (
             <>

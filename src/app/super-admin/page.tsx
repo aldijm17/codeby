@@ -174,9 +174,7 @@ export default function SuperAdminPage() {
 
       if (error) {
         console.error("Error fetching snippets:", error);
-        alert(
-          "Gagal mengambil data snippet. Pastikan sudah menambahkan foreign key (user_id) di Supabase Dashboard (lihat tutorial di script).",
-        );
+        alert("Gagal mengambil data snippet.");
       } else {
         setSnippets(data || []);
       }
@@ -234,7 +232,6 @@ export default function SuperAdminPage() {
 
       if (error) throw error;
       
-      // Update local state
       setUsers(
         users.map((u) =>
           u.id === userId ? { ...u, role: "super_admin" } : u
@@ -289,7 +286,6 @@ export default function SuperAdminPage() {
 
       if (error) throw error;
 
-      // Optional: Send "Welcome/Reset Password" email automatically on approval
       const approvedUser = requests.find((r) => r.id === userId);
       if (approvedUser?.email) {
         await supabase.auth.resetPasswordForEmail(approvedUser.email, {
@@ -323,7 +319,6 @@ export default function SuperAdminPage() {
 
   return (
     <div className="flex h-screen bg-[#0f172a] text-slate-200">
-      {/* Mobile Sidebar Overlay */}
       <AnimatePresence>
         {isSidebarOpen && (
           <motion.div
@@ -336,7 +331,6 @@ export default function SuperAdminPage() {
         )}
       </AnimatePresence>
 
-      {/* Sidebar Admin */}
       <aside
         className={`fixed md:static inset-y-0 left-0 z-50 w-64 bg-slate-900 border-r border-slate-800 flex flex-col pt-8 transition-transform duration-300 ease-in-out ${
           isSidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
@@ -412,7 +406,6 @@ export default function SuperAdminPage() {
         </div>
       </aside>
 
-      {/* Main Content */}
       <main className="flex-1 overflow-y-auto bg-slate-950/20">
         <header className="h-20 border-b border-slate-800 flex items-center px-6 md:px-10 bg-slate-900/30 backdrop-blur-md sticky top-0 z-10 gap-4">
           <button

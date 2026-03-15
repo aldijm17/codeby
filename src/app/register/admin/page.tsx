@@ -40,7 +40,6 @@ export default function RegisterPage() {
 
       if (error) throw error;
 
-      // Create profile entry immediately
       if (authData.user) {
         await supabase.from("profiles").upsert({
           id: authData.user.id,
@@ -48,7 +47,7 @@ export default function RegisterPage() {
           display_name: displayName,
           email: email,
           role: "user",
-          is_approved: true, // Auto-approve upon registration
+          is_approved: true,
         });
       }
 
@@ -84,7 +83,6 @@ export default function RegisterPage() {
 
   return (
     <div className="flex items-center justify-center min-h-screen p-4 relative overflow-hidden">
-      {/* Decorative Background Elements */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-cyan-500/10 blur-[120px] rounded-full pointer-events-none -z-10" />
 
       <motion.div

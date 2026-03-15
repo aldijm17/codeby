@@ -110,7 +110,6 @@ export default function ProfilePage() {
       setUsername(user.user_metadata?.username || "");
       setAvatarUrl(user.user_metadata?.avatar_url || "");
 
-      // Fetch Stats
       const { count: followers } = await supabase
         .from("follows")
         .select("*", { count: "exact", head: true })
@@ -154,19 +153,16 @@ export default function ProfilePage() {
       const fileName = `${user?.id}-${Math.random().toString(36).substring(2)}.${fileExt}`;
       const filePath = `${user?.id}/${fileName}`;
 
-      // Upload to storage
       const { error: uploadError } = await supabase.storage
         .from("avatars")
         .upload(filePath, file);
 
       if (uploadError) throw uploadError;
 
-      // Get public URL
       const {
         data: { publicUrl },
       } = supabase.storage.from("avatars").getPublicUrl(filePath);
 
-      // Update user metadata immediately with new avatar
       const { error: updateError } = await supabase.auth.updateUser({
         data: { avatar_url: publicUrl },
       });
@@ -187,7 +183,6 @@ export default function ProfilePage() {
     setIsSaving(true);
 
     try {
-      // 1. Update Password if provided
       if (newPassword) {
         if (newPassword !== confirmPassword) {
           throw new Error("Password baru dan konfirmasi password tidak sama!");
@@ -201,7 +196,6 @@ export default function ProfilePage() {
         if (passwordError) throw passwordError;
       }
 
-      // 2. Update User Metadata (Display Name & Username)
       const { error: metadataError } = await supabase.auth.updateUser({
         data: {
           display_name: displayName,
@@ -211,7 +205,6 @@ export default function ProfilePage() {
 
       if (metadataError) throw metadataError;
 
-      // 3. Sinkronisasi ke tabel public.profiles
       const { error: syncError } = await supabase.from("profiles").upsert({
         id: user?.id,
         username: username,
@@ -242,7 +235,6 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen bg-[#0B1120] text-slate-200">
       <div className="max-w-3xl mx-auto px-4 py-8 sm:py-12">
-        {/* Header */}
         <div className="flex items-center gap-4 mb-8">
           <Link
             href="/dashboard"
@@ -306,7 +298,6 @@ export default function ProfilePage() {
         <div className="glass rounded-3xl border border-slate-700/50 overflow-hidden shadow-2xl bg-slate-900/40">
           <div className="p-8">
             <form onSubmit={handleProfileUpdate} className="space-y-8">
-              {/* Profile Picture Section */}
               <div className="flex flex-col sm:flex-row items-center gap-6 pb-8 border-b border-slate-800/60">
                 <div className="relative group">
                   <div className="w-28 h-28 rounded-full overflow-hidden border-4 border-slate-800 bg-slate-800 flex items-center justify-center relative">
@@ -320,7 +311,6 @@ export default function ProfilePage() {
                       <UserIcon className="w-12 h-12 text-slate-500" />
                     )}
 
-                    {/* Hover Overlay */}
                     <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                       {uploadingAvatar ? (
                         <Loader2 className="w-6 h-6 text-white animate-spin" />
@@ -349,7 +339,6 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              {/* Personal Info */}
               <div className="space-y-5 pb-8 border-b border-slate-800/60">
                 <h3 className="text-lg font-semibold text-white flex items-center gap-2">
                   <UserIcon className="w-5 h-5 text-cyan-400" />
@@ -408,7 +397,6 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              {/* Security */}
               <div className="space-y-5">
                 <h3 className="text-lg font-semibold text-white flex items-center gap-2">
                   <Lock className="w-5 h-5 text-cyan-400" />
@@ -443,7 +431,6 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              {/* Actions */}
               <div className="pt-6 flex justify-end gap-3">
                 <Link
                   href="/dashboard"

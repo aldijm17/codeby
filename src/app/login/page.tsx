@@ -27,7 +27,6 @@ export default function LoginPage() {
     if (error) {
       setErrorMessage(error.message);
     } else if (authData.user) {
-      // Check if user is approved
       const { data: profile, error: profileError } = await supabase
         .from("profiles")
         .select("is_approved, role")
@@ -67,7 +66,6 @@ export default function LoginPage() {
 
   return (
     <div className="flex justify-center items-center min-h-screen p-4 relative overflow-hidden">
-      {/* Decorative Background Elements */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-cyan-500/10 blur-[120px] rounded-full pointer-events-none -z-10" />
 
       <motion.div

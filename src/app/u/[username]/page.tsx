@@ -60,7 +60,6 @@ export default function UserProfilePage({
   const [selectedSnippet, setSelectedSnippet] = useState<Contekan | null>(null);
   const [isCopied, setIsCopied] = useState(false);
 
-  // Social List States
   const [showListModal, setShowListModal] = useState(false);
   const [listType, setListType] = useState<"followers" | "following">(
     "followers",
@@ -74,13 +73,11 @@ export default function UserProfilePage({
     const fetchData = async () => {
       setIsLoading(true);
 
-      // 1. Get current user
       const {
         data: { user: authedUser },
       } = await supabase.auth.getUser();
       setCurrentUser(authedUser);
 
-      // 2. Get profile by username
       const { data: profileData, error: profileError } = await supabase
         .from("profiles")
         .select("*")
@@ -94,7 +91,6 @@ export default function UserProfilePage({
 
       setProfile(profileData);
 
-      // 3. Get contekans for this user
       const { data: contekansData } = await supabase
         .from("contekans")
         .select("*")
@@ -103,7 +99,6 @@ export default function UserProfilePage({
 
       setContekans((contekansData as Contekan[]) || []);
 
-      // 4. Get social stats
       const { count: followers } = await supabase
         .from("follows")
         .select("*", { count: "exact", head: true })
@@ -117,7 +112,6 @@ export default function UserProfilePage({
       setFollowersCount(followers || 0);
       setFollowingCount(following || 0);
 
-      // 5. Check if current user follows this profile
       if (authedUser && authedUser.id !== profileData.id) {
         const { data: followData } = await supabase
           .from("follows")
@@ -144,13 +138,11 @@ export default function UserProfilePage({
     try {
       let query;
       if (type === "followers") {
-        // Get users who follow this profile
         query = supabase
           .from("follows")
           .select("profiles:follower_id(*)")
           .eq("following_id", profile.id);
       } else {
-        // Get users this profile follows
         query = supabase
           .from("follows")
           .select("profiles:following_id(*)")
@@ -160,7 +152,6 @@ export default function UserProfilePage({
       const { data, error } = await query;
       if (error) throw error;
 
-      // Extract profiles from the relationship
       const users = data?.map((item: any) => item.profiles) || [];
       setListUsers(users.filter(Boolean));
     } catch (error) {
@@ -180,7 +171,6 @@ export default function UserProfilePage({
     setIsFollowLoading(true);
     try {
       if (isFollowing) {
-        // Unfollow
         await supabase
           .from("follows")
           .delete()
@@ -190,7 +180,6 @@ export default function UserProfilePage({
         setIsFollowing(false);
         setFollowersCount((prev) => prev - 1);
       } else {
-        // Follow
         await supabase.from("follows").insert({
           follower_id: currentUser.id,
           following_id: profile.id,
@@ -241,7 +230,6 @@ export default function UserProfilePage({
   return (
     <div className="min-h-screen bg-[#0B1120] text-slate-200">
       <div className="max-w-4xl mx-auto px-4 py-8 sm:py-12">
-        {/* Back Button */}
         <Link
           href="/"
           className="inline-flex items-center gap-2 text-slate-400 hover:text-white mb-8 transition-colors group"
@@ -250,7 +238,6 @@ export default function UserProfilePage({
           <span>Back to Home</span>
         </Link>
 
-        {/* Profile Header */}
         <div className="glass rounded-3xl border border-slate-700/50 overflow-hidden shadow-2xl bg-slate-900/40 p-8 mb-8">
           <div className="flex flex-col md:flex-row items-center gap-8">
             <div className="relative group shrink-0">
@@ -343,7 +330,6 @@ export default function UserProfilePage({
           </div>
         </div>
 
-        {/* Snippets List */}
         <div>
           <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
             <Code2 className="w-6 h-6 text-cyan-400" />
@@ -398,7 +384,6 @@ export default function UserProfilePage({
         </div>
       </div>
 
-      {/* Snippet View Modal */}
       <AnimatePresence>
         {selectedSnippet && (
           <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 sm:p-6">
@@ -496,7 +481,6 @@ export default function UserProfilePage({
         )}
       </AnimatePresence>
 
-      {/* Follower/Following List Modal */}
       <AnimatePresence>
         {showListModal && (
           <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 sm:p-6">
