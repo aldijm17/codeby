@@ -42,6 +42,8 @@ import {
   UserPlus,
   ShieldAlert,
   Clock,
+  Lock,
+  Globe,
 } from "lucide-react";
 import Link from "next/link";
 import "../globals.css";
@@ -57,6 +59,7 @@ interface Contekan {
   language?: string;
   tags?: string[];
   file_content?: string;
+  is_private?: boolean;
 }
 
 const Modal = ({
@@ -119,6 +122,7 @@ export default function DashboardPage() {
     file?: File | null;
     language: string;
     tags: string;
+    is_private: boolean;
   }
 
   const [formState, setFormState] = useState<FormState>({
@@ -128,6 +132,7 @@ export default function DashboardPage() {
     deskripsi: "",
     language: "javascript",
     tags: "",
+    is_private: false,
   });
   const [socialStats, setSocialStats] = useState({
     followers: 0,
@@ -339,6 +344,8 @@ export default function DashboardPage() {
     if (filter === "mine" && user) {
       filtered = filtered.filter((c) => c.user_id === user.id);
     }
+    // RLS will handle most of this, but it's good to have local filtering logic if needed
+    // especially for "all" view where we only want to see public ones OR our own
     return filtered;
   }, [contekans, searchQuery, filter, user]);
 
@@ -364,6 +371,7 @@ export default function DashboardPage() {
       file_content: "",
       language: "javascript",
       tags: "",
+      is_private: false,
     });
     setViewMode("add");
     if (window.innerWidth < 768) setIsSidebarOpen(false);
@@ -375,6 +383,7 @@ export default function DashboardPage() {
       file: null,
       language: contekan.language || "javascript",
       tags: contekan.tags ? contekan.tags.join(", ") : "",
+      is_private: !!contekan.is_private,
     });
     setViewMode("edit");
   };
@@ -429,6 +438,7 @@ export default function DashboardPage() {
                 .split(",")
                 .map((t) => t.trim())
                 .filter(Boolean),
+              is_private: formState.is_private,
             },
           ])
           .select();
@@ -457,6 +467,7 @@ export default function DashboardPage() {
               .split(",")
               .map((t) => t.trim())
               .filter(Boolean),
+            is_private: formState.is_private,
           })
           .eq("id", formState.id)
           .select();
@@ -712,6 +723,9 @@ export default function DashboardPage() {
                       className={`font-bold text-sm truncate transition-colors ${currentItem?.id === c.id ? "text-cyan-100" : "text-slate-400 group-hover:text-slate-200"}`}
                     >
                       {c.judul}
+                      {c.is_private && (
+                        <Lock className="w-3 h-3 text-red-500/70 inline-block ml-1.5 mb-0.5" />
+                      )}
                     </h4>
                     <p className="text-xs text-slate-500 truncate group-hover:text-slate-400 transition-colors">
                       {c.deskripsi || "No description"}
@@ -1028,6 +1042,33 @@ export default function DashboardPage() {
                             }
                             className="w-full px-5 py-4 bg-slate-950/50 backdrop-blur-xl border border-slate-700/60 rounded-2xl focus:ring-2 focus:ring-cyan-500/40 focus:border-cyan-500/50 focus:outline-none transition-all text-slate-200 placeholder:text-slate-600 shadow-inner"
                           />
+                        </div>
+                      </div>
+
+                      <div className="space-y-3 bg-slate-950/30 p-4 rounded-2xl border border-slate-700/40">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className={`p-2 rounded-lg ${formState.is_private ? "bg-red-500/10 text-red-400" : "bg-cyan-500/10 text-cyan-400"}`}>
+                              {formState.is_private ? <Lock className="w-5 h-5" /> : <Globe className="w-5 h-5" />}
+                            </div>
+                            <div>
+                              <p className="text-sm font-bold text-slate-200">
+                                {formState.is_private ? "Private Snippet" : "Public Snippet"}
+                              </p>
+                              <p className="text-xs text-slate-500 mt-0.5">
+                                {formState.is_private ? "Only you and super admins can see this." : "Everyone can browse and see this snippet."}
+                              </p>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setFormState({ ...formState, is_private: !formState.is_private })}
+                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ring-2 ring-offset-2 ring-offset-slate-900 ${formState.is_private ? "bg-red-500 ring-red-500/50" : "bg-slate-700 ring-slate-700/50"}`}
+                          >
+                            <span
+                              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${formState.is_private ? "translate-x-6" : "translate-x-1"}`}
+                            />
+                          </button>
                         </div>
                       </div>
 

@@ -25,6 +25,8 @@ import {
   X,
   Menu,
   ShieldPlus,
+  Lock,
+  Globe,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
@@ -718,8 +720,13 @@ export default function SuperAdminPage() {
                                     <Hash className="w-5 h-5 text-cyan-400" />
                                   </div>
                                   <div>
-                                    <p className="font-bold text-white truncate max-w-xs">
+                                    <p className="font-bold text-white truncate max-w-xs flex items-center gap-1.5">
                                       {s.judul}
+                                      {s.is_private ? (
+                                        <Lock className="w-3 h-3 text-red-400" />
+                                      ) : (
+                                        <Globe className="w-3 h-3 text-slate-500" />
+                                      )}
                                     </p>
                                     <p className="text-[10px] text-slate-500 font-mono mt-0.5">
                                       {s.id}

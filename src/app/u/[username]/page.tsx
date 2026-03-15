@@ -20,6 +20,7 @@ import {
   Copy,
   Check,
   X,
+  Lock,
 } from "lucide-react";
 import Link from "next/link";
 import { atomDark } from "react-syntax-highlighter/dist/esm/styles/prism";
@@ -52,6 +53,7 @@ interface Contekan {
   created_at: string;
   deskripsi: string;
   language?: string;
+  is_private?: boolean;
 }
 
 export default function UserProfilePage({
@@ -374,8 +376,11 @@ export default function UserProfilePage({
                         <div className="p-1.5 rounded-lg bg-slate-800/50 text-cyan-400 border border-slate-700/50 group-hover:scale-110 transition-transform">
                           <FileText className="w-4 h-4" />
                         </div>
-                        <h3 className="font-bold text-lg text-slate-100 truncate group-hover:text-cyan-300 transition-colors">
+                        <h3 className="font-bold text-lg text-slate-100 truncate group-hover:text-cyan-300 transition-colors flex items-center gap-2">
                           {c.judul}
+                          {c.is_private && (
+                            <Lock className="w-3.5 h-3.5 text-red-500/70" />
+                          )}
                         </h3>
                       </div>
                       <p className="text-sm text-slate-400 line-clamp-1">
