@@ -146,7 +146,7 @@ export default function ProfilePage() {
     try {
       setUploadingAvatar(true);
       if (!e.target.files || e.target.files.length === 0) {
-        throw new Error("Pilih foto terlebih dahulu.");
+        throw new Error("Pilih foto dahulu.");
       }
 
       const file = e.target.files[0];
