@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect, use } from "react";
+import dynamic from "next/dynamic";
+import Image from "next/image";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -20,9 +22,20 @@ import {
   X,
 } from "lucide-react";
 import Link from "next/link";
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { atomDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 import "../../globals.css";
+
+const SyntaxHighlighter = dynamic(
+  () => import("react-syntax-highlighter").then((mod) => mod.Prism),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="w-full h-48 bg-slate-900/50 animate-pulse rounded-xl border border-slate-800 flex items-center justify-center">
+        <Loader2 className="w-6 h-6 text-slate-700 animate-spin" />
+      </div>
+    ),
+  },
+);
 
 interface Profile {
   id: string;
@@ -250,9 +263,11 @@ export default function UserProfilePage({
               <div className="relative group shrink-0">
                 <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-full overflow-hidden border-4 border-slate-900 bg-slate-800 flex items-center justify-center relative shadow-2xl">
                   {profile.avatar_url ? (
-                    <img
+                    <Image
                       src={profile.avatar_url}
                       alt={profile.display_name}
+                      width={160}
+                      height={160}
                       className="w-full h-full object-cover"
                     />
                   ) : (
@@ -538,9 +553,11 @@ export default function UserProfilePage({
                       >
                         <div className="w-10 h-10 rounded-full overflow-hidden border border-slate-700 bg-slate-800 shrink-0">
                           {u.avatar_url ? (
-                            <img
+                            <Image
                               src={u.avatar_url}
                               alt={u.display_name}
+                              width={40}
+                              height={40}
                               className="w-full h-full object-cover"
                             />
                           ) : (

@@ -1,11 +1,24 @@
 "use client";
 
 import { useState, useEffect, useMemo, FormEvent, ReactNode } from "react";
+import dynamic from "next/dynamic";
+import Image from "next/image";
 import { supabase } from "@/lib/supabase";
 import { User } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { atomDark } from "react-syntax-highlighter/dist/esm/styles/prism";
+
+const SyntaxHighlighter = dynamic(
+  () => import("react-syntax-highlighter").then((mod) => mod.Prism),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="w-full h-48 bg-slate-900/50 animate-pulse rounded-xl border border-slate-800 flex items-center justify-center">
+        <Loader2 className="w-6 h-6 text-slate-700 animate-spin" />
+      </div>
+    ),
+  },
+);
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus,
@@ -532,9 +545,11 @@ export default function DashboardPage() {
             >
               <div className="w-10 h-10 rounded-full overflow-hidden border border-slate-700 bg-slate-800 flex items-center justify-center shrink-0">
                 {user?.user_metadata?.avatar_url ? (
-                  <img
+                  <Image
                     src={user.user_metadata.avatar_url}
                     alt="Profile"
+                    width={40}
+                    height={40}
                     className="w-full h-full object-cover"
                   />
                 ) : (
@@ -625,9 +640,11 @@ export default function DashboardPage() {
                       >
                         <div className="w-8 h-8 rounded-full overflow-hidden border border-slate-700 bg-slate-900 shrink-0">
                           {u.avatar_url ? (
-                            <img
+                            <Image
                               src={u.avatar_url}
                               alt={u.display_name}
+                              width={32}
+                              height={32}
                               className="w-full h-full object-cover"
                             />
                           ) : (

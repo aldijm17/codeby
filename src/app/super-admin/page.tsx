@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import {
@@ -559,8 +560,11 @@ export default function SuperAdminPage() {
                                 <div className="flex items-center gap-3">
                                   <div className="w-10 h-10 rounded-full bg-slate-800 border border-slate-700 overflow-hidden flex items-center justify-center overflow-hidden">
                                     {u.avatar_url ? (
-                                      <img
+                                      <Image
                                         src={u.avatar_url}
+                                        alt={u.display_name}
+                                        width={40}
+                                        height={40}
                                         className="w-full h-full object-cover"
                                       />
                                     ) : (
