@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+
 const withPWA = require("@ducanh2912/next-pwa").default({
   dest: "public",
   disable: process.env.NODE_ENV === "development",
@@ -7,8 +8,8 @@ const withPWA = require("@ducanh2912/next-pwa").default({
 });
 
 /** @type {import('next').NextConfig} */
-
 const nextConfig: NextConfig = {
+  turbopack: {}, // Required to silence error when using custom webpack config with Turbopack enabled
   reactStrictMode: true,
   images: {
     remotePatterns: [
