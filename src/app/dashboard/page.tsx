@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, FormEvent, ReactNode } from "react";
+import { useState, useEffect, useMemo, useRef, FormEvent, ReactNode } from "react";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import { supabase } from "@/lib/supabase";
@@ -44,7 +44,9 @@ import {
   Clock,
   Lock,
   Globe,
+  Download,
 } from "lucide-react";
+import { toPng } from "html-to-image";
 import Link from "next/link";
 import "../globals.css";
 
@@ -160,6 +162,29 @@ export default function DashboardPage() {
   const [userRole, setUserRole] = useState<string | null>(null);
 
   const router = useRouter();
+  const exportRef = useRef<HTMLDivElement>(null);
+
+  const exportAsImage = async () => {
+    if (!exportRef.current || !currentItem) return;
+
+    try {
+      const dataUrl = await toPng(exportRef.current, {
+        cacheBust: true,
+        style: {
+          padding: "50px",
+          background: "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)",
+          borderRadius: "0px",
+        },
+      });
+
+      const link = document.createElement("a");
+      link.download = `codeby-${currentItem.judul.toLowerCase().replace(/\s+/g, "-")}.png`;
+      link.href = dataUrl;
+      link.click();
+    } catch (err) {
+      console.error("Export failed:", err);
+    }
+  };
 
   useEffect(() => {
     const initialize = async () => {
@@ -555,7 +580,7 @@ export default function DashboardPage() {
           className={`fixed md:relative w-72 h-full bg-slate-900/60 backdrop-blur-2xl border-r border-slate-800/60 flex flex-col z-40 md:translate-x-0 transition-transform duration-300 ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}`}
         >
           <header className="p-6 border-b border-slate-700/40 flex justify-between items-center bg-slate-900/40 relative overflow-hidden">
-             <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/10 blur-[40px] rounded-full pointer-events-none -z-10" />
+            <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/10 blur-[40px] rounded-full pointer-events-none -z-10" />
             <Link
               href="/dashboard/profile"
               className="flex items-center gap-3 w-full hover:bg-slate-800/50 p-2 -m-2 rounded-xl transition-colors cursor-pointer group"
@@ -884,7 +909,10 @@ export default function DashboardPage() {
                         )}
                     </header>
 
-                    <div className="rounded-[2rem] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.6)] border border-slate-700/60 mt-10 bg-slate-900/60 backdrop-blur-3xl relative group">
+                    <div
+                      ref={exportRef}
+                      className="rounded-[2rem] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.6)] border border-slate-700/60 mt-10 bg-slate-900/60 backdrop-blur-3xl relative group"
+                    >
                       <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none"></div>
                       <div className="flex items-center justify-between px-5 py-4 bg-slate-950/80 border-b border-white/5 relative z-10 shadow-inner">
                         <div className="flex gap-2">
@@ -896,6 +924,13 @@ export default function DashboardPage() {
                           <span className="text-xs font-mono text-slate-500 uppercase">
                             {currentItem.language || "javascript"}
                           </span>
+                          <button
+                            onClick={exportAsImage}
+                            className="flex items-center gap-1.5 text-xs font-medium text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 px-2.5 py-1.5 rounded-md transition-all border border-slate-700 hover:border-slate-600"
+                          >
+                            <Download className="w-3.5 h-3.5" />
+                            Export
+                          </button>
                           <button
                             onClick={() => handleCopy(currentItem.isi)}
                             className="flex items-center gap-1.5 text-xs font-medium text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 px-2.5 py-1.5 rounded-md transition-all border border-slate-700 hover:border-slate-600"
@@ -927,6 +962,14 @@ export default function DashboardPage() {
                       >
                         {currentItem.isi}
                       </SyntaxHighlighter>
+
+                      {/* Watermark for export */}
+                      <div className="absolute bottom-4 right-6 flex items-center gap-2 opacity-30 select-none pointer-events-none">
+                        <div className="h-4 w-[1px] bg-slate-500" />
+                        <span className="text-[10px] font-mono tracking-widest text-slate-400">
+                          CREATED BY @aldijm17 & @abdlrhmnrsyd | CODEBY
+                        </span>
+                      </div>
                     </div>
                   </motion.div>
                 )}
@@ -943,9 +986,13 @@ export default function DashboardPage() {
                     <div className="flex items-center justify-between mb-10 pb-6 border-b border-slate-700/50">
                       <h2 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-white to-cyan-200 flex items-center gap-4 drop-shadow-sm">
                         {viewMode === "add" ? (
-                          <div className="p-3 bg-cyan-500/10 rounded-2xl border border-cyan-500/20"><Plus className="w-7 h-7 text-cyan-400" /></div>
+                          <div className="p-3 bg-cyan-500/10 rounded-2xl border border-cyan-500/20">
+                            <Plus className="w-7 h-7 text-cyan-400" />
+                          </div>
                         ) : (
-                          <div className="p-3 bg-cyan-500/10 rounded-2xl border border-cyan-500/20"><Edit className="w-7 h-7 text-cyan-400" /></div>
+                          <div className="p-3 bg-cyan-500/10 rounded-2xl border border-cyan-500/20">
+                            <Edit className="w-7 h-7 text-cyan-400" />
+                          </div>
                         )}
                         {viewMode === "add"
                           ? "Create New Snippet"
@@ -1054,21 +1101,36 @@ export default function DashboardPage() {
                       <div className="space-y-3 bg-slate-950/30 p-4 rounded-2xl border border-slate-700/40">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
-                            <div className={`p-2 rounded-lg ${formState.is_private ? "bg-red-500/10 text-red-400" : "bg-cyan-500/10 text-cyan-400"}`}>
-                              {formState.is_private ? <Lock className="w-5 h-5" /> : <Globe className="w-5 h-5" />}
+                            <div
+                              className={`p-2 rounded-lg ${formState.is_private ? "bg-red-500/10 text-red-400" : "bg-cyan-500/10 text-cyan-400"}`}
+                            >
+                              {formState.is_private ? (
+                                <Lock className="w-5 h-5" />
+                              ) : (
+                                <Globe className="w-5 h-5" />
+                              )}
                             </div>
                             <div>
                               <p className="text-sm font-bold text-slate-200">
-                                {formState.is_private ? "Private Snippet" : "Public Snippet"}
+                                {formState.is_private
+                                  ? "Private Snippet"
+                                  : "Public Snippet"}
                               </p>
                               <p className="text-xs text-slate-500 mt-0.5">
-                                {formState.is_private ? "Only you and super admins can see this." : "Everyone can browse and see this snippet."}
+                                {formState.is_private
+                                  ? "Only you and super admins can see this."
+                                  : "Everyone can browse and see this snippet."}
                               </p>
                             </div>
                           </div>
                           <button
                             type="button"
-                            onClick={() => setFormState({ ...formState, is_private: !formState.is_private })}
+                            onClick={() =>
+                              setFormState({
+                                ...formState,
+                                is_private: !formState.is_private,
+                              })
+                            }
                             className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ring-2 ring-offset-2 ring-offset-slate-900 ${formState.is_private ? "bg-red-500 ring-red-500/50" : "bg-slate-700 ring-slate-700/50"}`}
                           >
                             <span
