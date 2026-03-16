@@ -963,12 +963,20 @@ export default function DashboardPage() {
                         {currentItem.isi}
                       </SyntaxHighlighter>
 
-                      {/* Watermark for export */}
-                      <div className="absolute bottom-4 right-6 flex items-center gap-2 opacity-30 select-none pointer-events-none">
-                        <div className="h-4 w-[1px] bg-slate-500" />
-                        <span className="text-[10px] font-mono tracking-widest text-slate-400">
-                          CREATED BY @aldijm17 & @abdlrhmnrsyd | CODEBY
-                        </span>
+                      {/* Footer Watermark for export */}
+                      <div className="bg-slate-950/40 border-t border-white/5 px-6 py-4 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full bg-cyan-500 animate-pulse" />
+                          <span className="text-[10px] font-bold tracking-[0.2em] text-slate-500 uppercase">
+                            CodeBy Premium Snippet
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="h-3 w-[1px] bg-slate-800" />
+                          <span className="text-[10px] font-mono text-slate-400 opacity-60">
+                            CREATED BY @abdlrhmnrsyd & @aldijm17
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </motion.div>
