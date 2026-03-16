@@ -46,7 +46,9 @@ import {
   Globe,
   Download,
   Sparkles,
-  Wand2,
+  MessageSquare,
+  Send,
+  MessageCircle,
 } from "lucide-react";
 import { toPng } from "html-to-image";
 import Link from "next/link";
@@ -64,6 +66,11 @@ interface Contekan {
   tags?: string[];
   file_content?: string;
   is_private?: boolean;
+}
+
+interface ChatMessage {
+  role: "user" | "model";
+  parts: { text: string }[];
 }
 
 const Modal = ({
@@ -204,7 +211,10 @@ export default function DashboardPage() {
 
   const [foundUsers, setFoundUsers] = useState<any[]>([]);
   const [isSearchingUsers, setIsSearchingUsers] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [isAILoading, setIsAILoading] = useState(false);
+  const [currentPrompt, setCurrentPrompt] = useState("");
 
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -389,34 +399,43 @@ export default function DashboardPage() {
 
   const closeModal = () => setModalState({ ...modalState, isOpen: false });
   
-  const handleAIOptimize = async () => {
-    if (!formState.isi) {
-      showNotification("No Code to Optimize", "Please enter some code before using the AI optimizer.");
-      return;
-    }
+  const handleSendChatMessage = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!currentPrompt.trim() || isAILoading) return;
 
+    const userMessage = currentPrompt.trim();
+    setCurrentPrompt("");
+    
+    const newMessages: ChatMessage[] = [
+      ...chatMessages,
+      { role: "user", parts: [{ text: userMessage }] }
+    ];
+    setChatMessages(newMessages);
     setIsAILoading(true);
+
     try {
-      const response = await fetch("/api/ai/optimize", {
+      const response = await fetch("/api/ai/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          message: userMessage,
+          history: chatMessages,
           code: formState.isi,
           language: formState.language,
         }),
       });
 
       const data = await response.json();
-
-      if (data.optimizedCode) {
-        setFormState((prev) => ({ ...prev, isi: data.optimizedCode }));
-        showNotification("AI Optimization Success", "Your code has been optimized and documented by AI.");
+      if (data.text) {
+        setChatMessages([
+          ...newMessages,
+          { role: "model", parts: [{ text: data.text }] }
+        ]);
       } else {
-        const errorMsg = data.details ? `${data.error}: ${data.details}` : (data.error || "Failed to optimize code");
-        throw new Error(errorMsg);
+        throw new Error(data.error || "Failed to get AI response");
       }
     } catch (err: any) {
-      showNotification("AI Error", err.message || "An error occurred while using AI.");
+      showNotification("Chat Error", err.message || "Failed to communicate with AI.");
     } finally {
       setIsAILoading(false);
     }
@@ -1235,16 +1254,18 @@ export default function DashboardPage() {
                           </label>
                           <button
                             type="button"
-                            onClick={handleAIOptimize}
-                            disabled={isAILoading}
-                            className="flex items-center gap-2 px-3 py-1.5 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 rounded-lg border border-cyan-500/20 transition-all text-xs font-bold group disabled:opacity-50 disabled:cursor-not-allowed"
+                            onClick={() => {
+                              setIsChatOpen(true);
+                              if (chatMessages.length === 0) {
+                                setChatMessages([
+                                  { role: "model", parts: [{ text: "Hello! I am your AI Assistant. How can I help you with your code today?" }] }
+                                ]);
+                              }
+                            }}
+                            className="flex items-center gap-2 px-3 py-1.5 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 rounded-lg border border-cyan-500/20 transition-all text-xs font-bold group"
                           >
-                            {isAILoading ? (
-                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                            ) : (
-                              <Sparkles className="w-3.5 h-3.5 transition-transform group-hover:scale-110" />
-                            )}
-                            {isAILoading ? "Optimizing..." : "Optimize with AI"}
+                            <MessageSquare className="w-3.5 h-3.5 transition-transform group-hover:scale-110" />
+                            Chat with AI
                           </button>
                         </div>
                         <div className="relative group">
@@ -1313,6 +1334,101 @@ export default function DashboardPage() {
           </div>
         </main>
       </div>
+
+      <AnimatePresence>
+        {isChatOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsChatOpen(false)}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60]"
+            />
+            <motion.div
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="fixed top-0 right-0 h-full w-full max-w-md bg-slate-900 border-l border-slate-800 shadow-2xl z-[70] flex flex-col"
+            >
+              <div className="p-6 border-b border-slate-800 flex items-center justify-between bg-slate-900/50 backdrop-blur-xl">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-cyan-500/10 rounded-xl">
+                    <MessageCircle className="w-5 h-5 text-cyan-400" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-slate-100">AI Assistant</h3>
+                    <p className="text-[10px] text-cyan-500 font-bold uppercase tracking-wider">Online & Ready</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setIsChatOpen(false)}
+                  className="p-2 hover:bg-slate-800 rounded-lg text-slate-400 transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
+                {chatMessages.map((msg, idx) => (
+                  <div
+                    key={idx}
+                    className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+                  >
+                    <div
+                      className={`max-w-[85%] p-4 rounded-2xl text-sm ${
+                        msg.role === "user"
+                          ? "bg-cyan-600 text-white rounded-tr-none shadow-lg shadow-cyan-900/20"
+                          : "bg-slate-800 text-slate-200 rounded-tl-none border border-slate-700/50"
+                      }`}
+                    >
+                      <div className="prose prose-invert prose-sm max-w-none whitespace-pre-wrap">
+                        {msg.parts[0].text}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {isAILoading && (
+                  <div className="flex justify-start">
+                    <div className="bg-slate-800 p-4 rounded-2xl rounded-tl-none border border-slate-700/50 flex items-center gap-2">
+                      <Loader2 className="w-4 h-4 text-cyan-400 animate-spin" />
+                      <span className="text-sm text-slate-400">AI is thinking...</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <form
+                onSubmit={handleSendChatMessage}
+                className="p-6 border-t border-slate-800 bg-slate-900/80 backdrop-blur-xl"
+              >
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={currentPrompt}
+                    onChange={(e) => setCurrentPrompt(e.target.value)}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        handleSendChatMessage();
+                      }
+                    }}
+                    placeholder="Ask anything about your code..."
+                    className="w-full pl-4 pr-12 py-3.5 bg-slate-950 border border-slate-800 rounded-xl focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 outline-none text-slate-200 text-sm placeholder:text-slate-600 transition-all"
+                  />
+                  <button
+                    type="submit"
+                    disabled={!currentPrompt.trim() || isAILoading}
+                    className="absolute right-2 top-2 p-1.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg transition-all disabled:opacity-50 disabled:bg-slate-800"
+                  >
+                    <Send className="w-4 h-4" />
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
       <Modal
         isOpen={modalState.isOpen}
