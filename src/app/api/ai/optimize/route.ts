@@ -3,19 +3,25 @@ import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
   try {
+    console.log("AI Optimize: Starting request...");
     const apiKey = process.env.GEMINI_API_KEY;
     
     if (!apiKey) {
-      console.error("AI Error: GEMINI_API_KEY is missing in environment variables.");
-      return NextResponse.json({ error: "API Key not configured. Please add GEMINI_API_KEY to your Vercel/environment settings." }, { status: 500 });
+      console.error("AI Optimize Error: GEMINI_API_KEY is missing.");
+      return NextResponse.json({ 
+        error: "API Key not configured. Please add GEMINI_API_KEY to your Vercel/environment settings." 
+      }, { status: 500 });
     }
 
-    const { code, language } = await req.json();
+    const body = await req.json();
+    const { code, language } = body;
+    console.log(`AI Optimize: Received code for language: ${language || "unknown"}`);
 
     if (!code) {
       return NextResponse.json({ error: "No code provided" }, { status: 400 });
     }
 
+    console.log("AI Optimize: Initializing Gemini model...");
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
@@ -32,9 +38,11 @@ export async function POST(req: Request) {
       ${code}
     `;
 
+    console.log("AI Optimize: Sending content to Gemini...");
     const result = await model.generateContent(prompt);
     const response = await result.response;
     let text = response.text().trim();
+    console.log("AI Optimize: Generated content successfully.");
 
     // Clean up markdown code blocks if the AI accidentally included them
     if (text.startsWith("```") && text.endsWith("```")) {
@@ -44,7 +52,10 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ optimizedCode: text });
   } catch (error: any) {
-    console.error("AI Error:", error);
-    return NextResponse.json({ error: error.message || "AI processing failed" }, { status: 500 });
+    console.error("AI Optimize Critical Error:", error);
+    return NextResponse.json({ 
+      error: "AI processing failed. Check internal logs for details.", 
+      details: error.message 
+    }, { status: 500 });
   }
 }
