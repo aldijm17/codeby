@@ -45,6 +45,8 @@ import {
   Lock,
   Globe,
   Download,
+  Sparkles,
+  Wand2,
 } from "lucide-react";
 import { toPng } from "html-to-image";
 import Link from "next/link";
@@ -202,6 +204,7 @@ export default function DashboardPage() {
 
   const [foundUsers, setFoundUsers] = useState<any[]>([]);
   const [isSearchingUsers, setIsSearchingUsers] = useState(false);
+  const [isAILoading, setIsAILoading] = useState(false);
 
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -385,6 +388,38 @@ export default function DashboardPage() {
   }, [searchQuery]);
 
   const closeModal = () => setModalState({ ...modalState, isOpen: false });
+  
+  const handleAIOptimize = async () => {
+    if (!formState.isi) {
+      showNotification("No Code to Optimize", "Please enter some code before using the AI optimizer.");
+      return;
+    }
+
+    setIsAILoading(true);
+    try {
+      const response = await fetch("/api/ai/optimize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          code: formState.isi,
+          language: formState.language,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.optimizedCode) {
+        setFormState((prev) => ({ ...prev, isi: data.optimizedCode }));
+        showNotification("AI Optimization Success", "Your code has been optimized and documented by AI.");
+      } else {
+        throw new Error(data.error || "Failed to optimize code");
+      }
+    } catch (err: any) {
+      showNotification("AI Error", err.message || "An error occurred while using AI.");
+    } finally {
+      setIsAILoading(false);
+    }
+  };
 
   const showNotification = (title: string, message: string) => {
     setModalState({
@@ -1193,9 +1228,24 @@ export default function DashboardPage() {
                       </div>
 
                       <div className="space-y-2">
-                        <label className="text-sm font-medium text-slate-400 ml-1">
-                          Code
-                        </label>
+                        <div className="flex items-center justify-between ml-1">
+                          <label className="text-sm font-medium text-slate-400">
+                            Code
+                          </label>
+                          <button
+                            type="button"
+                            onClick={handleAIOptimize}
+                            disabled={isAILoading}
+                            className="flex items-center gap-2 px-3 py-1.5 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 rounded-lg border border-cyan-500/20 transition-all text-xs font-bold group disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {isAILoading ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            ) : (
+                              <Sparkles className="w-3.5 h-3.5 transition-transform group-hover:scale-110" />
+                            )}
+                            {isAILoading ? "Optimizing..." : "Optimize with AI"}
+                          </button>
+                        </div>
                         <div className="relative group">
                           <textarea
                             placeholder="// Paste your code here..."
