@@ -23,7 +23,7 @@ export async function POST(req: Request) {
 
     console.log("AI Optimize: Initializing Gemini model...");
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
     const prompt = `
       You are an expert software engineer. Optimize the following ${language || "code"} snippet.
