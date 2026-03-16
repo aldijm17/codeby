@@ -412,7 +412,8 @@ export default function DashboardPage() {
         setFormState((prev) => ({ ...prev, isi: data.optimizedCode }));
         showNotification("AI Optimization Success", "Your code has been optimized and documented by AI.");
       } else {
-        throw new Error(data.error || "Failed to optimize code");
+        const errorMsg = data.details ? `${data.error}: ${data.details}` : (data.error || "Failed to optimize code");
+        throw new Error(errorMsg);
       }
     } catch (err: any) {
       showNotification("AI Error", err.message || "An error occurred while using AI.");
