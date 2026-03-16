@@ -253,7 +253,7 @@ export default function Home() {
              <Terminal className="w-5 h-5 text-cyan-400" />
              <span className="text-lg font-bold text-slate-200">CodeBy.</span>
            </div>
-           <p className="text-slate-500 text-sm font-medium">© 2026 CodeBy. For developers, by developers.</p>
+           <p className="text-slate-500 text-sm font-medium">© 2026 CodeBy. @asit4u_ & @din_pincent</p>
         </div>
       </footer>
     </div>
