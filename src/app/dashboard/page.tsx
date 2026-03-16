@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef, FormEvent, ReactNode } from "react";
+import { useState, useEffect, useMemo, useRef, FormEvent, ReactNode, memo } from "react";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import { supabase } from "@/lib/supabase";
@@ -105,6 +105,62 @@ const Modal = ({
     </AnimatePresence>
   );
 };
+
+const SnippetItem = memo(({ c, isCurrent, onClick }: { 
+  c: Contekan, 
+  isCurrent: boolean, 
+  onClick: () => void 
+}) => (
+  <motion.div
+    layoutId={c.id}
+    onClick={onClick}
+    className={`group p-3.5 rounded-2xl cursor-pointer transition-all border relative overflow-hidden ${isCurrent ? "bg-slate-800/80 border-cyan-500/40 shadow-[0_0_15px_rgba(6,182,212,0.15)]" : "bg-transparent border-transparent hover:bg-slate-800/40 hover:border-slate-700/50"}`}
+  >
+    <div className="flex items-center gap-3 relative z-10">
+      <div
+        className={`p-2.5 rounded-lg transition-colors ${isCurrent ? "bg-cyan-500/20 text-cyan-400" : "bg-slate-800 text-slate-400 group-hover:bg-slate-700 group-hover:text-slate-200"}`}
+      >
+        <FileText className="w-4 h-4" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <h4
+          className={`font-bold text-sm truncate transition-colors ${isCurrent ? "text-cyan-100" : "text-slate-400 group-hover:text-slate-200"}`}
+        >
+          {c.judul}
+          {c.is_private && (
+            <Lock className="w-3 h-3 text-red-500/70 inline-block ml-1.5 mb-0.5" />
+          )}
+        </h4>
+        <p className="text-xs text-slate-500 truncate group-hover:text-slate-400 transition-colors">
+          {c.deskripsi || "No description"}
+        </p>
+        {c.tags && c.tags.length > 0 && (
+          <div className="flex gap-1 mt-1.5 overflow-hidden">
+            {c.tags.slice(0, 3).map((tag, i) => (
+              <span
+                key={i}
+                className="text-[10px] px-1.5 py-0.5 rounded-md bg-slate-800 text-slate-400 border border-slate-700 whitespace-nowrap"
+              >
+                #{tag}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+      {isCurrent && (
+        <ChevronRight className="w-4 h-4 text-cyan-500/50" />
+      )}
+    </div>
+    {isCurrent && (
+      <motion.div
+        layoutId="active-glow"
+        className="absolute inset-0 bg-cyan-500/5 z-0"
+      />
+    )}
+  </motion.div>
+));
+
+SnippetItem.displayName = "SnippetItem";
 
 export default function DashboardPage() {
   const [contekans, setContekans] = useState<Contekan[]>([]);
@@ -593,6 +649,8 @@ export default function DashboardPage() {
                     width={40}
                     height={40}
                     className="w-full h-full object-cover"
+                    priority
+                    sizes="40px"
                   />
                 ) : (
                   <UserIcon className="w-5 h-5 text-slate-400 group-hover:text-cyan-400 transition-colors" />
@@ -688,6 +746,7 @@ export default function DashboardPage() {
                               width={32}
                               height={32}
                               className="w-full h-full object-cover"
+                              sizes="32px"
                             />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center text-slate-500">
@@ -731,60 +790,18 @@ export default function DashboardPage() {
             )}
           </div>
 
-          <nav className="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar">
+          <nav className="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar" style={{ contentVisibility: 'auto' }}>
             {filteredContekans.map((c) => (
-              <motion.div
-                layoutId={c.id}
+              <SnippetItem
                 key={c.id}
+                c={c}
+                isCurrent={currentItem?.id === c.id && viewMode !== "add"}
                 onClick={() => {
                   setCurrentItem(c);
                   setViewMode("view");
                   if (window.innerWidth < 768) setIsSidebarOpen(false);
                 }}
-                className={`group p-3.5 rounded-2xl cursor-pointer transition-all border relative overflow-hidden ${currentItem?.id === c.id && viewMode !== "add" ? "bg-slate-800/80 border-cyan-500/40 shadow-[0_0_15px_rgba(6,182,212,0.15)]" : "bg-transparent border-transparent hover:bg-slate-800/40 hover:border-slate-700/50"}`}
-              >
-                <div className="flex items-center gap-3 relative z-10">
-                  <div
-                    className={`p-2.5 rounded-lg transition-colors ${currentItem?.id === c.id ? "bg-cyan-500/20 text-cyan-400" : "bg-slate-800 text-slate-400 group-hover:bg-slate-700 group-hover:text-slate-200"}`}
-                  >
-                    <FileText className="w-4 h-4" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h4
-                      className={`font-bold text-sm truncate transition-colors ${currentItem?.id === c.id ? "text-cyan-100" : "text-slate-400 group-hover:text-slate-200"}`}
-                    >
-                      {c.judul}
-                      {c.is_private && (
-                        <Lock className="w-3 h-3 text-red-500/70 inline-block ml-1.5 mb-0.5" />
-                      )}
-                    </h4>
-                    <p className="text-xs text-slate-500 truncate group-hover:text-slate-400 transition-colors">
-                      {c.deskripsi || "No description"}
-                    </p>
-                    {c.tags && c.tags.length > 0 && (
-                      <div className="flex gap-1 mt-1.5 overflow-hidden">
-                        {c.tags.slice(0, 3).map((tag, i) => (
-                          <span
-                            key={i}
-                            className="text-[10px] px-1.5 py-0.5 rounded-md bg-slate-800 text-slate-400 border border-slate-700 whitespace-nowrap"
-                          >
-                            #{tag}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  {currentItem?.id === c.id && (
-                    <ChevronRight className="w-4 h-4 text-cyan-500/50" />
-                  )}
-                </div>
-                {currentItem?.id === c.id && (
-                  <motion.div
-                    layoutId="active-glow"
-                    className="absolute inset-0 bg-cyan-500/5 z-0"
-                  />
-                )}
-              </motion.div>
+              />
             ))}
           </nav>
 
@@ -969,12 +986,6 @@ export default function DashboardPage() {
                           <div className="w-2 h-2 rounded-full bg-cyan-500 animate-pulse" />
                           <span className="text-[10px] font-bold tracking-[0.2em] text-slate-500 uppercase">
                             CodeBy Premium Snippet
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <div className="h-3 w-[1px] bg-slate-800" />
-                          <span className="text-[10px] font-mono text-slate-400 opacity-60">
-                            CREATED BY @abdlrhmnrsyd & @aldijm17
                           </span>
                         </div>
                       </div>
