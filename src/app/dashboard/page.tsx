@@ -414,12 +414,20 @@ export default function DashboardPage() {
     setIsAILoading(true);
 
     try {
+      // Filter history to ensure it's in the format Gemini expects:
+      // 1. Starts with a 'user' message
+      // 2. Alternates between 'user' and 'model' (or is at least valid)
+      const validHistory = chatMessages.filter((msg, index) => {
+        if (index === 0 && msg.role === "model") return false;
+        return true;
+      });
+
       const response = await fetch("/api/ai/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message: userMessage,
-          history: chatMessages,
+          history: validHistory,
           code: formState.isi,
           language: formState.language,
         }),
