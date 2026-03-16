@@ -15,8 +15,22 @@ const jetbrainsMono = JetBrains_Mono({
 import SupabaseProvider from "@/providers/supabase-provider";
 
 export const metadata: Metadata = {
-  title: "Contekan Koding - Premium Code Snippets",
-  description: "Koleksi contekan kodingan premium untuk developer modern dengan fitur super admin .",
+  title: "CodeBy - Premium Code Snippets",
+  description: "Koleksi contekan kodingan premium untuk developer modern dengan fitur super admin.",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "CodeBy",
+  },
+  formatDetection: {
+    telephone: false,
+  },
+  other: {
+    "theme-color": "#0f172a",
+    "mobile-web-app-capable": "yes",
+    "apple-mobile-web-app-title": "CodeBy",
+  },
 };
 
 export default function RootLayout({
