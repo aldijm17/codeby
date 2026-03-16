@@ -1137,7 +1137,7 @@ export default function DashboardPage() {
                               </p>
                               <p className="text-xs text-slate-500 mt-0.5">
                                 {formState.is_private
-                                  ? "Only you and super admins can see this."
+                                  ? "Only you can see this."
                                   : "Everyone can browse and see this snippet."}
                               </p>
                             </div>
