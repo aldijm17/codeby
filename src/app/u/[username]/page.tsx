@@ -21,10 +21,12 @@ import {
   Check,
   X,
   Lock,
+  GitFork,
 } from "lucide-react";
 import Link from "next/link";
 import { atomDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 import "../../globals.css";
+import ContributionGraph from "@/components/ContributionGraph";
 
 const SyntaxHighlighter = dynamic(
   () => import("react-syntax-highlighter").then((mod) => mod.Prism),
@@ -54,6 +56,10 @@ interface Contekan {
   deskripsi: string;
   language?: string;
   is_private?: boolean;
+  user_id?: string;
+  user_display_name?: string;
+  file_content?: string;
+  tags?: string[];
 }
 
 export default function UserProfilePage({
@@ -82,6 +88,35 @@ export default function UserProfilePage({
   );
   const [listUsers, setListUsers] = useState<Profile[]>([]);
   const [isListLoading, setIsListLoading] = useState(false);
+
+  // For forking
+  const [isForking, setIsForking] = useState(false);
+  const handleFork = async (snippet: Contekan) => {
+    if (!currentUser) {
+      router.push("/login");
+      return;
+    }
+    setIsForking(true);
+    try {
+      const { error } = await supabase.from("contekans").insert([{
+        judul: `Fork of ${snippet.judul}`,
+        isi: snippet.isi,
+        deskripsi: snippet.deskripsi,
+        user_display_name: currentUser.user_metadata?.display_name || currentUser.email,
+        user_id: currentUser.id,
+        file_content: snippet.file_content || "",
+        language: snippet.language || "javascript",
+        tags: snippet.tags || [],
+        is_private: false,
+      }]);
+      if (error) throw error;
+      alert("Snippet berhasil di-fork ke koleksi Anda!");
+    } catch (err: any) {
+      alert("Gagal melakukan fork: " + err.message);
+    } finally {
+      setIsForking(false);
+    }
+  };
 
   const router = useRouter();
 
@@ -368,6 +403,10 @@ export default function UserProfilePage({
             </div>
           </div>
         </div>
+        
+        <div className="mb-10 w-full animate-fade-in">
+          <ContributionGraph dates={contekans.map(c => c.created_at)} />
+        </div>
 
         <div>
           <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
@@ -486,21 +525,33 @@ export default function UserProfilePage({
                       <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/20 border border-yellow-500/40" />
                       <div className="w-2.5 h-2.5 rounded-full bg-green-500/20 border border-green-500/40" />
                     </div>
-                    <button
-                      onClick={() => handleCopy(selectedSnippet.isi)}
-                      className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 border ${
-                        isCopied
-                          ? "bg-green-500/20 border-green-500/50 text-green-400"
-                          : "bg-slate-800/80 border-white/5 hover:bg-slate-700 text-slate-300"
-                      }`}
-                    >
-                      {isCopied ? (
-                        <Check className="w-3 h-3" />
-                      ) : (
-                        <Copy className="w-3 h-3" />
+                    <div className="flex items-center gap-2">
+                      {currentUser && selectedSnippet.user_id !== currentUser.id && (
+                        <button
+                          onClick={() => handleFork(selectedSnippet)}
+                          disabled={isForking}
+                          className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold bg-gradient-to-r from-cyan-600/30 to-blue-600/30 border border-cyan-500/30 text-cyan-300 hover:from-cyan-500/40 hover:to-blue-500/40 transition-all disabled:opacity-50"
+                        >
+                          {isForking ? <Loader2 className="w-3 h-3 animate-spin"/> : <GitFork className="w-3 h-3"/>}
+                          Fork
+                        </button>
                       )}
-                      {isCopied ? "Copied!" : "Copy Code"}
-                    </button>
+                      <button
+                        onClick={() => handleCopy(selectedSnippet.isi)}
+                        className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 border ${
+                          isCopied
+                            ? "bg-green-500/20 border-green-500/50 text-green-400"
+                            : "bg-slate-800/80 border-white/5 hover:bg-slate-700 text-slate-300"
+                        }`}
+                      >
+                        {isCopied ? (
+                          <Check className="w-3 h-3" />
+                        ) : (
+                          <Copy className="w-3 h-3" />
+                        )}
+                        {isCopied ? "Copied!" : "Copy Code"}
+                      </button>
+                    </div>
                   </div>
                   <SyntaxHighlighter
                     language={selectedSnippet.language || "javascript"}

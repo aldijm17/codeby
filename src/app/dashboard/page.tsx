@@ -49,6 +49,7 @@ import {
   MessageSquare,
   Send,
   MessageCircle,
+  GitFork,
 } from "lucide-react";
 import { toPng } from "html-to-image";
 import Link from "next/link";
@@ -640,6 +641,48 @@ export default function DashboardPage() {
     }
   };
 
+  const handleFork = async (snippetOptions: Contekan) => {
+    if (!user) return;
+    setIsUploading(true);
+
+    try {
+      const { data, error } = await supabase
+        .from("contekans")
+        .insert([
+          {
+            judul: `Fork of ${snippetOptions.judul}`,
+            isi: snippetOptions.isi,
+            deskripsi: snippetOptions.deskripsi,
+            user_display_name: user.user_metadata?.display_name || user.email,
+            user_id: user.id,
+            file_content: snippetOptions.file_content,
+            language: snippetOptions.language,
+            tags: snippetOptions.tags,
+            is_private: false, // Forks are public by default
+          },
+        ])
+        .select();
+
+      if (error) throw error;
+
+      if (data) {
+        setContekans((prev) => [data[0], ...prev]);
+        setCurrentItem(data[0]);
+        setViewMode("view");
+        
+        // Let the user know the fork was successful and we're editing the new one (optional, but view is fine)
+        showNotification(
+          "Berhasil di-Fork",
+          "Karya ini telah di-copy ke koleksi Anda. Anda dapat mengeditnya kapan saja."
+        );
+      }
+    } catch (error: any) {
+      showNotification("Gagal Fork", error.message);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   const handleDelete = async (id: string) => {
     showConfirmation(
       "Konfirmasi Hapus",
@@ -984,6 +1027,25 @@ export default function DashboardPage() {
                               className="flex items-center gap-2 px-5 py-2.5 bg-red-500/10 hover:bg-red-500/20 backdrop-blur-md text-red-400 border border-red-500/20 rounded-xl transition-all font-semibold shadow-lg shadow-black/20 hover:shadow-red-500/10"
                             >
                               <Trash2 className="w-4 h-4" /> Delete
+                            </button>
+                          </div>
+                        )}
+                        
+                      {user &&
+                        currentItem &&
+                        user.id !== currentItem.user_id && (
+                          <div className="flex gap-2 shrink-0">
+                            <button
+                              onClick={() => handleFork(currentItem)}
+                              disabled={isUploading}
+                              className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-cyan-600/30 to-blue-600/30 hover:from-cyan-500/40 hover:to-blue-500/40 backdrop-blur-md text-cyan-300 rounded-xl border border-cyan-500/30 transition-all font-semibold shadow-lg shadow-cyan-900/20 hover:shadow-cyan-500/20 group hover:scale-105"
+                            >
+                              {isUploading ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <GitFork className="w-4 h-4 group-hover:rotate-12 transition-transform" />
+                              )}
+                              Fork Snippet
                             </button>
                           </div>
                         )}
