@@ -210,7 +210,7 @@ export default function LoginPage() {
       </div>
 
       {/* Right Panel - Form (Centered on Mobile) */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12 relative">
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-4 sm:p-12 relative">
           {/* Mobile Background Blob */}
          <div className="lg:hidden absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none -z-10">
            <div className="absolute top-[-10%] right-[-10%] w-[400px] h-[400px] bg-cyan-500/10 blur-[100px] rounded-full mix-blend-screen" />
@@ -220,7 +220,7 @@ export default function LoginPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: "easeOut", delay: 0.2 }}
-          className="w-full max-w-[440px] bg-slate-900/40 lg:bg-transparent p-6 sm:p-10 rounded-3xl lg:rounded-none lg:p-0 border border-slate-700/50 lg:border-none backdrop-blur-xl lg:backdrop-blur-none shadow-2xl lg:shadow-none z-10"
+          className="w-full max-w-[440px] bg-slate-900/40 lg:bg-transparent p-5 sm:p-10 rounded-3xl lg:rounded-none lg:p-0 border border-slate-700/50 lg:border-none backdrop-blur-xl lg:backdrop-blur-none shadow-2xl lg:shadow-none z-10"
         >
           {/* Mobile Header */}
           <div className="lg:hidden flex items-center gap-3 mb-10 justify-center">

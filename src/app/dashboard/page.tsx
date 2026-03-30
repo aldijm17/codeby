@@ -707,17 +707,17 @@ export default function DashboardPage() {
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:32px_32px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] -z-20 pointer-events-none"></div>
 
         {/* TOP NAVIGATION BAR */}
-        <header className="w-full bg-slate-900/60 backdrop-blur-2xl border-b border-slate-800/60 flex justify-between items-center py-4 px-6 md:px-12 z-40 relative">
-          <div className="flex items-center gap-4">
-             <Link href="/dashboard" onClick={() => setViewMode("list")} className="flex items-center gap-3 cursor-pointer group">
-               <div className="p-2.5 bg-gradient-to-br from-cyan-400 to-blue-600 rounded-xl shadow-lg shadow-cyan-500/20">
-                 <Code2 className="w-6 h-6 text-white group-hover:rotate-12 transition-transform" />
+        <header className="w-full bg-slate-900/60 backdrop-blur-2xl border-b border-slate-800/60 flex justify-between items-center py-4 px-4 md:px-12 z-40 relative">
+          <div className="flex items-center gap-2 sm:gap-4">
+             <Link href="/dashboard" onClick={() => setViewMode("list")} className="flex items-center gap-2 sm:gap-3 cursor-pointer group">
+               <div className="p-2 sm:p-2.5 bg-gradient-to-br from-cyan-400 to-blue-600 rounded-xl shadow-lg shadow-cyan-500/20">
+                 <Code2 className="w-5 h-5 sm:w-6 sm:h-6 text-white group-hover:rotate-12 transition-transform" />
                </div>
-               <span className="text-2xl font-extrabold tracking-tight text-white group-hover:text-cyan-400 transition-colors">CodeBy</span>
+               <span className="hidden sm:inline-block text-xl sm:text-2xl font-extrabold tracking-tight text-white group-hover:text-cyan-400 transition-colors">CodeBy</span>
              </Link>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">
             {userRole === "super_admin" && (
               <Link href="/super-admin" className="flex items-center gap-2 px-3 py-2 md:px-4 md:py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl border border-red-500/20 transition-all text-sm font-bold">
                 <ShieldAlert className="w-4 h-4 md:mr-1" />
@@ -729,14 +729,14 @@ export default function DashboardPage() {
               <Plus className="w-4 h-4" /> Create
             </button>
 
-            <div className="h-8 w-px bg-slate-700/50 mx-2 hidden sm:block"></div>
+            <div className="h-8 w-px bg-slate-700/50 mx-1 sm:mx-2 hidden sm:block"></div>
 
-            <Link href={`/u/${user?.user_metadata?.username}`} className="flex items-center gap-3 hover:bg-slate-800/50 p-1.5 pr-4 rounded-xl transition-colors cursor-pointer border border-transparent hover:border-slate-700/50">
-              <div className="w-9 h-9 rounded-full overflow-hidden border border-slate-700 bg-slate-800 shrink-0">
+            <Link href={`/u/${user?.user_metadata?.username}`} className="flex items-center gap-2 sm:gap-3 hover:bg-slate-800/50 p-1.5 md:pr-4 rounded-xl transition-colors cursor-pointer border border-transparent hover:border-slate-700/50">
+              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full overflow-hidden border border-slate-700 bg-slate-800 shrink-0">
                 {user?.user_metadata?.avatar_url ? (
                   <Image src={user.user_metadata.avatar_url} alt="Profile" width={36} height={36} className="w-full h-full object-cover" />
                 ) : (
-                  <UserIcon className="w-5 h-5 text-slate-400 m-auto mt-2" />
+                  <UserIcon className="w-4 h-4 sm:w-5 sm:h-5 text-slate-400 m-auto mt-2 sm:mt-2" />
                 )}
               </div>
               <div className="hidden md:block text-left">
@@ -745,12 +745,12 @@ export default function DashboardPage() {
               </div>
             </Link>
 
-            <Link href="/settings" className="p-2.5 bg-slate-800/80 hover:bg-cyan-500/10 hover:text-cyan-400 text-slate-400 rounded-xl transition-all border border-slate-700 hover:border-cyan-500/30">
-               <Settings className="w-5 h-5" />
+            <Link href="/settings" className="p-2 sm:p-2.5 bg-slate-800/80 hover:bg-cyan-500/10 hover:text-cyan-400 text-slate-400 rounded-xl transition-all border border-slate-700 hover:border-cyan-500/30">
+               <Settings className="w-5 h-5 sm:w-5 sm:h-5" />
             </Link>
 
-            <button onClick={handleLogout} className="p-2.5 bg-slate-800/80 hover:bg-red-500/10 hover:text-red-400 text-slate-400 rounded-xl transition-all border border-slate-700 hover:border-red-500/30">
-               <LogOut className="w-5 h-5" />
+            <button onClick={handleLogout} className="p-2 sm:p-2.5 bg-slate-800/80 hover:bg-red-500/10 hover:text-red-400 text-slate-400 rounded-xl transition-all border border-slate-700 hover:border-red-500/30">
+               <LogOut className="w-5 h-5 sm:w-5 sm:h-5" />
             </button>
           </div>
         </header>
@@ -830,6 +830,13 @@ export default function DashboardPage() {
                       </button>
                     </div>
                   )}
+                  {/* Floating Action Button (FAB) for Mobile */}
+                  <button
+                    onClick={handleAddNew}
+                    className="sm:hidden fixed bottom-6 right-6 w-14 h-14 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full shadow-[0_4px_20px_rgba(6,182,212,0.6)] flex items-center justify-center z-50 text-white hover:scale-105 transition-transform"
+                  >
+                    <Plus className="w-6 h-6" />
+                  </button>
                 </motion.div>
               )}
 
@@ -947,7 +954,7 @@ export default function DashboardPage() {
                   initial={{ opacity: 0, scale: 0.98, y: 10 }}
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.98, y: 10 }}
-                  className="bg-slate-900/60 backdrop-blur-2xl p-8 sm:p-12 mb-20 rounded-[3rem] border border-slate-700/50 shadow-[0_30px_80px_rgba(0,0,0,0.5)] relative overflow-hidden"
+                  className="bg-slate-900/60 backdrop-blur-2xl p-5 sm:p-8 md:p-12 mb-20 rounded-[2rem] sm:rounded-[3rem] border border-slate-700/50 shadow-[0_30px_80px_rgba(0,0,0,0.5)] relative overflow-hidden"
                 >
                   <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-cyan-500/10 blur-[120px] rounded-full pointer-events-none -z-10" />
                   <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-purple-500/10 blur-[120px] rounded-full pointer-events-none -z-10" />

@@ -106,7 +106,7 @@ export default function Home() {
           className="relative"
         >
           <div className="absolute inset-0 bg-cyan-500/20 blur-[100px] rounded-full scale-150 -z-10" />
-          <h1 className="text-7xl sm:text-8xl lg:text-[10rem] font-black tracking-tighter leading-[1.1] mb-6">
+          <h1 className="text-5xl sm:text-7xl lg:text-[10rem] font-black tracking-tighter leading-[1.1] mb-6">
             <span className="block text-transparent bg-clip-text bg-gradient-to-b from-white via-slate-200 to-slate-500 drop-shadow-2xl">
               Elevate Your
             </span>

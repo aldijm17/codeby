@@ -62,7 +62,7 @@ export default function SnippetDetailPage() {
 
   return (
     <div className="min-h-screen bg-[#070e1a] text-slate-200 pb-20">
-      <nav className="p-6 max-w-5xl mx-auto flex justify-between items-center border-b border-white/5">
+      <nav className="p-4 sm:p-6 max-w-5xl mx-auto flex justify-between items-center border-b border-white/5">
         <Link href="/explore" className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors">
           <ArrowLeft className="w-5 h-5" />
           <span>Kembali ke Explore</span>
@@ -73,11 +73,11 @@ export default function SnippetDetailPage() {
         </div>
       </nav>
 
-      <main className="max-w-5xl mx-auto px-6 mt-12">
+      <main className="max-w-5xl mx-auto px-4 sm:px-6 mt-8 sm:mt-12">
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-slate-900/40 border border-slate-800 rounded-[2.5rem] p-8 md:p-12 backdrop-blur-xl"
+          className="bg-slate-900/40 border border-slate-800 rounded-[2rem] sm:rounded-[2.5rem] p-5 sm:p-8 md:p-12 backdrop-blur-xl"
         >
           {/* Header Info */}
           <div className="flex flex-col md:flex-row justify-between items-start gap-6 mb-10">
@@ -127,7 +127,7 @@ export default function SnippetDetailPage() {
                 language={snippet.language?.toLowerCase()} 
                 style={atomDark}
                 customStyle={{
-                  padding: '2rem',
+                  padding: '1.25rem',
                   fontSize: '0.95rem',
                   lineHeight: '1.7',
                   background: '#020617',

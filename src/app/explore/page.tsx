@@ -49,7 +49,7 @@ export default function ExplorePage() {
         <div className="absolute bottom-0 left-0 w-[30%] h-[30%] bg-purple-700/10 blur-[120px] rounded-full" />
       </div>
 
-      <nav className="relative z-10 p-6 max-w-7xl mx-auto flex justify-between items-center">
+      <nav className="relative z-10 p-4 sm:p-6 max-w-7xl mx-auto flex justify-between items-center">
         <Link href="/" className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors">
           <ArrowLeft className="w-5 h-5" />
           <span>Back to Home</span>
@@ -60,7 +60,7 @@ export default function ExplorePage() {
         </div>
       </nav>
 
-      <main className="relative z-10 max-w-7xl mx-auto px-6 mt-12">
+      <main className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 mt-8 sm:mt-12">
         <header className="mb-12">
           <h1 className="text-4xl font-black text-white mb-4">Public Snippets</h1>
           <p className="text-slate-400 max-w-2xl">
