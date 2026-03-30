@@ -903,7 +903,7 @@ export default function DashboardPage() {
                     </div>
                   </header>
 
-                  <div ref={exportRef} className="rounded-[2.5rem] overflow-hidden shadow-[0_30px_60px_rgba(0,0,0,0.5)] border border-slate-700/60 mt-12 bg-slate-900/80 backdrop-blur-3xl relative group mb-20">
+                  <div className="rounded-[2.5rem] overflow-hidden shadow-[0_30px_60px_rgba(0,0,0,0.5)] border border-slate-700/60 mt-12 bg-slate-900/80 backdrop-blur-3xl relative group mb-20">
                     <div className="flex items-center justify-between px-6 py-5 bg-slate-950/80 border-b border-white/5 relative z-10 shadow-inner">
                       <div className="flex gap-2">
                         <div className="w-4 h-4 rounded-full bg-red-500/80 border border-red-400/50 shadow-[0_0_10px_rgba(239,68,68,0.5)]" />
