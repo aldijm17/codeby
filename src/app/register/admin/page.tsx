@@ -48,10 +48,12 @@ export default function RegisterPage() {
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        throw new Error(error.message || JSON.stringify(error) || "Failed to sign up. Please try again.");
+      }
 
       if (authData.user) {
-        await supabase.from("profiles").upsert({
+        const { error: profileError } = await supabase.from("profiles").upsert({
           id: authData.user.id,
           username: username,
           display_name: displayName,
@@ -59,14 +61,27 @@ export default function RegisterPage() {
           role: "user",
           is_approved: true,
         });
+
+        if (profileError) {
+          console.error("Profile creation error:", profileError);
+          // Don"t throw here, the user is registered but profile failed. 
+        }
       }
 
-      setSuccessMessage("Registration successful! Redirecting to login...");
+      setSuccessMessage("Registration successful! Redirecting to dashboard...");
       setTimeout(() => {
-        router.push("/login");
+        router.push("/dashboard");
       }, 2000);
     } catch (err: any) {
-      setErrorMessage(err.message || "Something went wrong. Please try again.");
+      console.error("Registration error:", err);
+      const msg = typeof err === "string" ? err : err?.message ? err.message : JSON.stringify(err);
+      
+      // Handle the timeout explicitly to give better UX
+      if (msg && msg.includes("upstream request timeout")) {
+          setErrorMessage("Server timeout processing your registration. This usually means the email server configuration in Supabase is currently unavailable. Please try signing up with Google instead.");
+      } else {
+          setErrorMessage(msg || "Something went wrong. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
@@ -215,7 +230,7 @@ export default function RegisterPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: "easeOut", delay: 0.2 }}
-          className="w-full max-w-[440px]"
+          className="w-full max-w-[440px] bg-slate-900/40 lg:bg-transparent p-6 sm:p-10 rounded-3xl lg:rounded-none lg:p-0 border border-slate-700/50 lg:border-none backdrop-blur-xl lg:backdrop-blur-none shadow-2xl lg:shadow-none z-10"
         >
           {/* Mobile Header */}
           <div className="lg:hidden flex items-center gap-3 mb-10 justify-center">

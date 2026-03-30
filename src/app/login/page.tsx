@@ -29,8 +29,26 @@ export default function LoginPage() {
     setLoading(true);
     setErrorMessage(null);
 
+    let loginEmail = email;
+    
+    // If input doesn't look like an email, assume it's a username and fetch the associated email
+    if (!email.includes('@')) {
+      const { data: profile, error: profileLookupError } = await supabase
+        .from("profiles")
+        .select("email")
+        .eq("username", email)
+        .single();
+        
+      if (profileLookupError || !profile?.email) {
+        setErrorMessage("Username not found. Please register first.");
+        setLoading(false);
+        return;
+      }
+      loginEmail = profile.email;
+    }
+
     const { data: authData, error } = await supabase.auth.signInWithPassword({
-      email,
+      email: loginEmail,
       password,
     });
 
@@ -202,7 +220,7 @@ export default function LoginPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: "easeOut", delay: 0.2 }}
-          className="w-full max-w-[440px]"
+          className="w-full max-w-[440px] bg-slate-900/40 lg:bg-transparent p-6 sm:p-10 rounded-3xl lg:rounded-none lg:p-0 border border-slate-700/50 lg:border-none backdrop-blur-xl lg:backdrop-blur-none shadow-2xl lg:shadow-none z-10"
         >
           {/* Mobile Header */}
           <div className="lg:hidden flex items-center gap-3 mb-10 justify-center">
@@ -233,12 +251,12 @@ export default function LoginPage() {
 
           <form onSubmit={handleLogin} className="space-y-5">
             <div className="space-y-1.5">
-               <label className="text-sm font-medium text-slate-300 ml-1">Email Address</label>
+               <label className="text-sm font-medium text-slate-300 ml-1">Email / Username</label>
               <div className="relative group">
                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 group-focus-within:text-cyan-400 transition-colors" />
                 <input
-                  type="email"
-                  placeholder="name@example.com"
+                  type="text"
+                  placeholder="name@example.com or username"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required

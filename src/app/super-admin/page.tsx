@@ -27,6 +27,7 @@ import {
   ShieldPlus,
   Lock,
   Globe,
+  Settings,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
@@ -429,6 +430,9 @@ export default function SuperAdminPage() {
                 Super Admin Mode
               </p>
             </div>
+            <Link href="/settings" className="p-2.5 bg-slate-800/80 hover:bg-cyan-500/10 hover:text-cyan-400 text-slate-400 rounded-xl transition-all border border-slate-700 hover:border-cyan-500/30">
+               <Settings className="w-5 h-5" />
+            </Link>
           </div>
         </header>
 
