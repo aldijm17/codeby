@@ -69,6 +69,10 @@ export default function Home() {
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.8 }}
         >
+        {/* Tombol Akses Tamu */}
+          <Link href="/explore" className="text-sm font-medium text-slate-400 hover:text-cyan-400 transition-colors mr-2">
+            Browse Code
+          </Link>
           {!isChecking && (
             user ? (
               <button onClick={handleGetStarted} className="px-6 py-2.5 rounded-full text-sm font-bold bg-slate-800/80 hover:bg-slate-700/80 backdrop-blur-md border border-slate-700 transition-all text-slate-200 hover:text-white hover:border-cyan-500/50 hover:shadow-[0_0_20px_rgba(6,182,212,0.2)]">
@@ -142,6 +146,13 @@ export default function Home() {
             <span className="relative z-10 drop-shadow-lg">Get Started</span> 
             <ArrowRight className="w-6 h-6 relative z-10 group-hover:translate-x-1.5 transition-transform duration-300" />
           </button>
+          <Link 
+            href="/explore" 
+            className="group flex items-center gap-2 px-8 py-4 text-lg font-semibold text-slate-300 hover:text-white transition-all bg-white/5 hover:bg-white/10 rounded-full border border-white/5 backdrop-blur-sm"
+          >
+            <Users className="w-5 h-5 text-cyan-400" />
+            Lihat Contekan (Guest)
+          </Link>
         </motion.div>
 
         {/* Abstract 3D Floating UI Elements connected to "Code" */}
