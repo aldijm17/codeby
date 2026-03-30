@@ -52,7 +52,6 @@ import {
   GitFork,
   Settings,
 } from "lucide-react";
-import { toPng } from "html-to-image";
 import Link from "next/link";
 import "../globals.css";
 
@@ -235,29 +234,7 @@ export default function DashboardPage() {
   const [userRole, setUserRole] = useState<string | null>(null);
 
   const router = useRouter();
-  const exportRef = useRef<HTMLDivElement>(null);
 
-  const exportAsImage = async () => {
-    if (!exportRef.current || !currentItem) return;
-
-    try {
-      const dataUrl = await toPng(exportRef.current, {
-        cacheBust: true,
-        style: {
-          padding: "50px",
-          background: "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)",
-          borderRadius: "0px",
-        },
-      });
-
-      const link = document.createElement("a");
-      link.download = `codeby-${currentItem.judul.toLowerCase().replace(/\s+/g, "-")}.png`;
-      link.href = dataUrl;
-      link.click();
-    } catch (err) {
-      console.error("Export failed:", err);
-    }
-  };
 
   useEffect(() => {
     const initialize = async () => {
@@ -742,8 +719,9 @@ export default function DashboardPage() {
 
           <div className="flex items-center gap-4">
             {userRole === "super_admin" && (
-              <Link href="/super-admin" className="hidden md:flex items-center gap-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl border border-red-500/20 transition-all text-sm font-bold">
-                <ShieldAlert className="w-4 h-4" /> Admin
+              <Link href="/super-admin" className="flex items-center gap-2 px-3 py-2 md:px-4 md:py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl border border-red-500/20 transition-all text-sm font-bold">
+                <ShieldAlert className="w-4 h-4 md:mr-1" />
+                <span className="hidden md:block">Admin</span>
               </Link>
             )}
 
@@ -934,10 +912,7 @@ export default function DashboardPage() {
                       </div>
                       <div className="flex items-center gap-4">
                         <span className="text-sm font-mono font-bold text-slate-400 uppercase bg-slate-900 px-3 py-1 rounded-lg border border-slate-800 drop-shadow-sm">{currentItem.language || "javascript"}</span>
-                        <div className="w-px h-6 bg-slate-800"></div>
-                        <button onClick={exportAsImage} className="flex items-center gap-2 text-xs font-bold text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 px-3.5 py-2 rounded-lg transition-all border border-slate-700 hover:border-slate-500">
-                          <Download className="w-4 h-4" /> Export
-                        </button>
+                        <div className="w-px h-6 bg-slate-800 hidden sm:block"></div>
                         <button onClick={() => handleCopy(currentItem.isi)} className="flex items-center gap-2 text-xs font-bold text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 px-3.5 py-2 rounded-lg transition-all border border-slate-700 hover:border-slate-500">
                           {isCopied ? <Check className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />}
                           {isCopied ? <span className="text-green-400">Copied!</span> : "Copy"}
