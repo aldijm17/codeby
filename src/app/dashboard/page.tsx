@@ -793,12 +793,66 @@ export default function DashboardPage() {
                   <div className="relative group mb-8">
                     <input
                       type="text"
-                      placeholder="Search snippets by title or tags..."
+                      placeholder="Search snippets or users..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       className="w-full pl-12 pr-4 py-4 md:py-5 bg-slate-900/60 backdrop-blur-md border border-slate-700/80 rounded-2xl text-slate-100 placeholder:text-slate-500 focus:ring-4 focus:ring-cyan-500/20 focus:border-cyan-500/50 focus:outline-none transition-all text-lg shadow-inner group-hover:border-slate-600"
                     />
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-6 h-6 text-slate-500 group-focus-within:text-cyan-400 transition-colors" />
+                    
+                    {/* User Search Results Dropdown */}
+                    <AnimatePresence>
+                      {searchQuery.length >= 2 && (foundUsers.length > 0 || isSearchingUsers) && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -10 }}
+                          className="absolute top-full left-0 right-0 mt-2 bg-[#0B1120] border border-slate-700/80 rounded-2xl shadow-2xl z-50 overflow-hidden"
+                        >
+                          {isSearchingUsers ? (
+                            <div className="p-4 flex items-center justify-center text-slate-400 gap-3">
+                              <Loader2 className="w-5 h-5 animate-spin text-cyan-500" />
+                              Searching users...
+                            </div>
+                          ) : foundUsers.length > 0 ? (
+                            <div className="flex flex-col max-h-[300px] overflow-y-auto custom-scrollbar">
+                              <div className="px-5 py-3 border-b border-slate-700/80 text-xs font-bold text-slate-400 uppercase tracking-wider bg-slate-900/50">
+                                Users Found
+                              </div>
+                              {foundUsers.map(u => (
+                                <Link
+                                  href={`/u/${u.username}`}
+                                  key={u.id}
+                                  className="flex items-center gap-4 p-4 hover:bg-slate-800/80 transition-colors border-l-2 border-transparent hover:border-cyan-500 group"
+                                >
+                                  <div className="w-12 h-12 rounded-full overflow-hidden bg-slate-800 border border-slate-700 shrink-0">
+                                    {u.avatar_url ? (
+                                      <Image src={u.avatar_url} alt={u.username} width={48} height={48} className="w-full h-full object-cover" />
+                                    ) : (
+                                      <UserIcon className="w-6 h-6 text-slate-400 m-auto mt-3" />
+                                    )}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <h4 className="font-bold text-slate-200 group-hover:text-cyan-400 truncate transition-colors text-base">{u.display_name}</h4>
+                                    <p className="text-sm text-cyan-500/80 font-mono truncate">@{u.username}</p>
+                                  </div>
+                                  <div className="flex gap-3 text-xs text-slate-500 hidden sm:flex">
+                                    <div className="flex items-center gap-1.5 bg-slate-900/80 px-2.5 py-1.5 rounded-lg border border-slate-700/50">
+                                      <FileText className="w-3.5 h-3.5" />
+                                      {u.contekans?.[0]?.count || 0}
+                                    </div>
+                                    <div className="flex items-center gap-1.5 bg-slate-900/80 px-2.5 py-1.5 rounded-lg border border-slate-700/50">
+                                      <Users className="w-3.5 h-3.5" />
+                                      {u.followers?.[0]?.count || 0}
+                                    </div>
+                                  </div>
+                                </Link>
+                              ))}
+                            </div>
+                          ) : null}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
 
                   {filteredContekans.length > 0 ? (

@@ -9,7 +9,10 @@ import {
   Terminal,
   Users,
   Sparkles,
-  ArrowRight
+  ArrowRight,
+  Code2,
+  Lock,
+  User as UserIcon
 } from "lucide-react";
 import "./globals.css";
 
@@ -17,14 +20,26 @@ export default function Home() {
   const router = useRouter();
   const [isChecking, setIsChecking] = useState(true);
   const [user, setUser] = useState<any>(null);
+  const [recentSnippets, setRecentSnippets] = useState<any[]>([]);
 
   useEffect(() => {
-    const checkUser = async () => {
+    const initialize = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       setUser(user);
       setIsChecking(false);
+
+      const { data } = await supabase
+        .from("contekans")
+        .select("*")
+        .eq("is_private", false)
+        .order("created_at", { ascending: false })
+        .limit(3);
+      
+      if (data) {
+        setRecentSnippets(data);
+      }
     };
-    checkUser();
+    initialize();
   }, []);
 
   const handleGetStarted = () => {
@@ -155,6 +170,86 @@ export default function Home() {
         </motion.div>
 
       </main>
+
+      {/* Latest Snippets Section */}
+      {recentSnippets.length > 0 && (
+        <section className="relative z-10 max-w-7xl mx-auto px-6 py-20">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-white via-cyan-100 to-slate-400 tracking-tight mb-4">
+              Latest Public Snippets
+            </h2>
+            <p className="text-slate-400 text-lg max-w-2xl mx-auto">
+              Discover recently added world-class code snippets from developers globally.
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {recentSnippets.map((c, i) => (
+              <motion.div
+                key={c.id}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: i * 0.1 }}
+                whileHover={{ y: -5, scale: 1.01 }}
+                onClick={() => router.push(user ? '/dashboard' : '/explore')}
+                className="group bg-slate-900/40 backdrop-blur-xl border border-slate-700/50 hover:border-cyan-500/40 hover:bg-slate-800/60 rounded-[2rem] p-6 cursor-pointer flex flex-col h-[280px] shadow-lg shadow-black/20 hover:shadow-[0_0_30px_rgba(6,182,212,0.15)] relative overflow-hidden"
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+                
+                <div className="flex justify-between items-start mb-4 relative z-10">
+                  <div className="flex items-center gap-3 w-full">
+                    <div className="p-3 rounded-2xl bg-slate-800 text-slate-400 group-hover:text-cyan-400 group-hover:bg-cyan-500/10 transition-colors border border-slate-700/50 shrink-0">
+                      <Code2 className="w-6 h-6" />
+                    </div>
+                    <div className="flex-1 min-w-0 pr-2">
+                      <h4 className="font-extrabold text-lg text-slate-100 group-hover:text-cyan-300 transition-colors truncate">{c.judul}</h4>
+                      <p className="text-xs text-cyan-500/80 font-mono mt-0.5">{c.language || "javascript"}</p>
+                    </div>
+                    {c.is_private && (
+                        <div className="p-1.5 bg-red-500/10 rounded-lg shrink-0">
+                          <Lock className="w-4 h-4 text-red-400" />
+                        </div>
+                    )}
+                  </div>
+                </div>
+
+                <p className="text-sm text-slate-400 line-clamp-3 mb-auto group-hover:text-slate-300 transition-colors relative z-10 font-medium leading-relaxed">
+                  {c.deskripsi || "No description provided."}
+                </p>
+
+                <div className="mt-4 pt-4 border-t border-slate-700/50 flex flex-col gap-3 relative z-10">
+                  {c.tags && c.tags.length > 0 && (
+                    <div className="flex gap-1.5 overflow-hidden">
+                      {c.tags.slice(0, 3).map((tag: string, j: number) => (
+                        <span key={j} className="text-[10px] px-2 py-1 rounded-md bg-slate-800 text-slate-400 border border-slate-700 whitespace-nowrap">
+                          #{tag}
+                        </span>
+                      ))}
+                      {c.tags.length > 3 && (
+                         <span className="text-[10px] px-1.5 py-1 text-slate-500">+{c.tags.length - 3}</span>
+                      )}
+                    </div>
+                  )}
+                  <div className="flex items-center gap-2 text-xs text-slate-500 bg-slate-800/50 px-2.5 py-1.5 rounded-lg w-fit">
+                    <UserIcon className="w-3.5 h-3.5" />
+                    <span className="truncate max-w-[120px] font-semibold">{c.user_display_name}</span>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+          
+          <div className="mt-12 text-center">
+            <Link 
+              href="/explore" 
+              className="inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-cyan-400 hover:text-cyan-300 transition-colors bg-cyan-500/10 hover:bg-cyan-500/20 rounded-full border border-cyan-500/20"
+            >
+              Browse all snippets <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+        </section>
+      )}
 
       {/* Futuristic Footer */}
       <footer className="relative z-10 border-t border-slate-800/50 py-10 mt-10 bg-slate-950/40 backdrop-blur-xl">
